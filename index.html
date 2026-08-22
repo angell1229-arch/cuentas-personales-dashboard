@@ -379,6 +379,9 @@
           <div id="catVariables"></div>
         </div>
       </div>
+
+      <div class="section-title">Compra de casa <span class="tag">aparte del gasto normal</span></div>
+      <div class="card"><div id="compraCasaCard"></div></div>
     </div>
 
     <div class="view" id="viewHistorial">
@@ -625,6 +628,19 @@
 
     $("catFijos").innerHTML = fijos.map(function(c){ return catRow(c, anual); }).join("") || '<div class="empty-note">Sin categorías fijas.</div>';
     $("catVariables").innerHTML = variables.map(function(c){ return catRow(c, anual); }).join("") || '<div class="empty-note">Sin categorías variables.</div>';
+
+    var compraCasa = d.categorias.find(function(c){ return c.nombre === "Compra de casa"; });
+    if(compraCasa){
+      var valorCasa = anual ? compraCasa.totalAnual : compraCasa.valorMes;
+      $("compraCasaCard").innerHTML =
+        '<div class="cat-row">' + catIcon(compraCasa.nombre) +
+        '<div class="cat-row-body">' +
+        '<div class="cat-top"><span class="cat-name">Compra de casa · '+(anual?"año "+state.year:MESES_LABEL[state.monthIdx])+'</span><span class="cat-amount">'+money.format(valorCasa)+'</span></div>' +
+        '<div class="cat-sub">No se incluye en el gasto ni en el disponible del Resumen.</div>' +
+        '</div></div>';
+    } else {
+      $("compraCasaCard").innerHTML = '<div class="empty-note">Sin datos.</div>';
+    }
   }
 
   function catRow(c, anual){
