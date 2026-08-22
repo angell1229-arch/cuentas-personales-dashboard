@@ -395,6 +395,7 @@
 
     <div class="view" id="viewCompartidos">
       <div class="stat-scroll" id="compartidosStats"></div>
+      <div class="card" style="margin-bottom:6px;padding:14px 16px;" id="balanceNote"></div>
       <div class="section-title">Detalle por categoría <span class="tag">50/50 con Pablo</span></div>
       <div class="card" id="compartidosDetalle"></div>
     </div>
@@ -664,19 +665,31 @@
     var anual = state.mode === "anual";
     var ct = anual ? d.compartidos.totalAnual : d.compartidos.total;
     var ce = anual ? d.compartidos.entre2Anual : d.compartidos.entre2;
+    var balance = anual ? d.compartidos.balanceAnual : d.compartidos.balance;
+    var pagadoPablo = anual ? d.compartidos.pagadoPabloAnual : d.compartidos.pagadoPablo;
+
+    var balanceLabel = balance >= 0 ? "Pablo te debe" : "Le debes a Pablo";
+    var balanceCls = balance >= 0 ? "pos" : "neg";
 
     $("compartidosStats").innerHTML =
       statCard("Total casa " + (anual?"anual":"del mes"), money.format(ct)) +
-      statCard("Tu mitad", money.format(ce));
+      statCard("Tu mitad", money.format(ce)) +
+      statCard("Pagado por Pablo", money.format(pagadoPablo)) +
+      statCard(balanceLabel, money.format(Math.abs(balance)), balanceCls);
+
+    $("balanceNote").innerHTML = balance >= 0
+      ? 'Pablo te debe <b>'+money.format(balance)+'</b> por lo que pagaste tú en COMIDA/LUZ/AGUA/INTERNET/CASA/GAS.'
+      : 'Le debes a Pablo <b>'+money.format(Math.abs(balance))+'</b> porque él pagó más de lo que le correspondía.';
 
     var detalle = d.compartidos.detalle || [];
     $("compartidosDetalle").innerHTML = detalle.map(function(item){
       var valor = anual ? item.totalAnual : item.valorMes;
       var mitad = valor / 2;
+      var sinPersona = item.nombre === "SALIDAS 2";
       return '<div class="cat-row">' + catIcon(item.nombre) +
         '<div class="cat-row-body">' +
         '<div class="cat-top"><span class="cat-name">'+item.nombre+'</span><span class="cat-amount">'+money.format(valor)+'</span></div>' +
-        '<div class="cat-sub">Tu mitad: '+money.format(mitad)+'</div>' +
+        '<div class="cat-sub">Tu mitad: '+money.format(mitad)+(sinPersona?' · no participa en el balance (viene de Manual)':'')+'</div>' +
         '</div></div>';
     }).join("") || '<div class="empty-note">Sin gastos compartidos este período.</div>';
   }
