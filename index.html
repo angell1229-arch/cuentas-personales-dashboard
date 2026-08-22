@@ -220,6 +220,19 @@
 
   .close-x{position:absolute;top:14px;right:16px;background:var(--surface-2);border:none;width:30px;height:30px;
     border-radius:50%;color:var(--text-dim);font-size:16px;cursor:pointer;}
+
+  .setup-overlay{
+    position:fixed;inset:0;z-index:60;background:var(--bg);display:flex;flex-direction:column;
+    justify-content:center;padding:26px;
+  }
+  .setup-overlay h1{font-size:20px;margin:0 0 6px;}
+  .setup-overlay p{color:var(--text-dim);font-size:13.5px;line-height:1.5;margin:0 0 20px;}
+  .setup-overlay .submit-btn{margin-top:22px;}
+  .icon-btn{
+    background:rgba(255,255,255,0.18);border:none;color:#fff;
+    width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+  }
 </style>
 </head>
 <body>
@@ -228,9 +241,14 @@
   <header>
     <div class="header-top">
       <span class="app-name">💰 Cuentas Personales</span>
-      <button class="refresh-btn" id="refreshBtn" title="Actualizar">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
-      </button>
+      <div style="display:flex;gap:8px;">
+        <button class="icon-btn" id="settingsBtn" title="Configuración">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+        <button class="refresh-btn" id="refreshBtn" title="Actualizar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 3v6h-6"/></svg>
+        </button>
+      </div>
     </div>
     <div class="period-switch">
       <button id="btnMensual" class="active">Mensual</button>
@@ -316,6 +334,16 @@
   </div>
 
   <div class="toast" id="toast"></div>
+
+  <div class="setup-overlay" id="setupOverlay" style="display:none;">
+    <h1>💰 Configura tu API</h1>
+    <p>Pega la URL de tu Apps Script Web App y el token. Se guardan solo en este navegador/celular, nunca en el código publicado.</p>
+    <label>URL del Web App</label>
+    <input type="text" id="setupUrl" placeholder="https://script.google.com/macros/s/.../exec">
+    <label>Token</label>
+    <input type="text" id="setupToken" placeholder="Tu APP_TOKEN">
+    <button class="submit-btn" id="setupSave">Guardar y continuar</button>
+  </div>
 </div>
 
 <script>
@@ -323,8 +351,10 @@
   "use strict";
 
   // ====== CONFIGURACIÓN ======
-  var API_URL = "https://script.google.com/macros/s/AKfycbzD_LwilUMKAuTH7NQdxMn0ZWED6dT40Rc_XYG4uOJ3vK_txCOKl8iJiLcurHScMiQZhA/exec";
-  var API_TOKEN = "_3BWhn_5VE9JilUzGnW-iD0K4tAmzxdL";
+  // La URL y el token NO viven en el código (así el archivo se puede publicar
+  // públicamente sin exponer nada): se piden una vez y quedan en localStorage.
+  var API_URL = localStorage.getItem("cp_api_url") || "";
+  var API_TOKEN = localStorage.getItem("cp_api_token") || "";
 
   var MESES = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
   var MESES_LABEL = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -577,9 +607,35 @@
     toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 3200);
   }
 
+  // ====== Configuración (URL + token) ======
+  function showSetup(){
+    $("setupUrl").value = API_URL;
+    $("setupToken").value = API_TOKEN;
+    $("setupOverlay").style.display = "flex";
+  }
+  function hideSetup(){ $("setupOverlay").style.display = "none"; }
+
+  $("settingsBtn").onclick = showSetup;
+  $("setupSave").onclick = function(){
+    var url = $("setupUrl").value.trim();
+    var token = $("setupToken").value.trim();
+    if(!url){ showToast("Falta la URL del Web App", "err"); return; }
+    localStorage.setItem("cp_api_url", url);
+    localStorage.setItem("cp_api_token", token);
+    API_URL = url;
+    API_TOKEN = token;
+    hideSetup();
+    loadListas();
+    loadData(true);
+  };
+
   // ====== Init ======
-  loadListas();
-  loadData(false);
+  if(!API_URL){
+    showSetup();
+  } else {
+    loadListas();
+    loadData(false);
+  }
 })();
 </script>
 </body>
