@@ -359,28 +359,19 @@
   <main id="main">
 
     <div class="view active" id="viewResumen">
-      <div class="resumen-grid">
-        <div>
-          <div class="stat-scroll" id="statScroll">
-            <div class="stat-card"><div class="label">Gasto</div><div class="value skeleton" style="height:20px;width:70%">&nbsp;</div></div>
-          </div>
+      <div class="stat-scroll" id="statScroll">
+        <div class="stat-card"><div class="label">Gasto</div><div class="value skeleton" style="height:20px;width:70%">&nbsp;</div></div>
+      </div>
 
-          <div class="section-title">Categorías <button class="link-btn" id="addCatBtn">+ Nueva categoría</button></div>
-          <div class="cat-columns">
-            <div class="card">
-              <div class="cat-group-title">Gastos fijos</div>
-              <div id="catFijos"></div>
-            </div>
-            <div class="card">
-              <div class="cat-group-title">Gastos variables</div>
-              <div id="catVariables"></div>
-            </div>
-          </div>
+      <div class="section-title">Categorías <button class="link-btn" id="addCatBtn">+ Nueva categoría</button></div>
+      <div class="cat-columns">
+        <div class="card">
+          <div class="cat-group-title">Gastos fijos</div>
+          <div id="catFijos"></div>
         </div>
-
-        <div>
-          <div class="section-title">Compartidos con Pablo <span class="tag">50/50</span></div>
-          <div class="card"><div class="compartidos-grid" id="compartidosGrid"></div></div>
+        <div class="card">
+          <div class="cat-group-title">Gastos variables</div>
+          <div id="catVariables"></div>
         </div>
       </div>
     </div>
@@ -390,12 +381,22 @@
       <div class="card" id="historialList"></div>
     </div>
 
+    <div class="view" id="viewCompartidos">
+      <div class="stat-scroll" id="compartidosStats"></div>
+      <div class="section-title">Detalle por categoría <span class="tag">50/50 con Pablo</span></div>
+      <div class="card" id="compartidosDetalle"></div>
+    </div>
+
   </main>
 
   <nav class="bottom">
     <button class="active" data-view="viewResumen" id="navResumen">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
       Resumen
+    </button>
+    <button data-view="viewCompartidos" id="navCompartidos">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 19a6.5 6.5 0 0 1 13 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6"/><path d="M18 13.5a6.5 6.5 0 0 1 3.5 5.5"/></svg>
+      Compartidos
     </button>
     <button class="fab" id="openSheetBtn">+</button>
     <button data-view="viewHistorial" id="navHistorial">
@@ -603,12 +604,7 @@
       statCard("Ahorro", money.format(ahorro)) +
       statCard("Disponible", money.format(diferencia), diferencia >= 0 ? "pos" : "neg");
 
-    // Compartidos
-    var ct = anual ? d.compartidos.totalAnual : d.compartidos.total;
-    var ce = anual ? d.compartidos.entre2Anual : d.compartidos.entre2;
-    $("compartidosGrid").innerHTML =
-      '<div class="mini"><div class="v">'+money.format(ct)+'</div><div class="l">Total casa</div></div>' +
-      '<div class="mini"><div class="v">'+money.format(ce)+'</div><div class="l">Tu mitad</div></div>';
+    renderCompartidos();
 
     // Categorías, separadas en Fijos / Variables
     var visibles = d.categorias.filter(function(c){ return c.nombre !== "Compra de casa" && c.nombre !== "GANANCIAS"; });
@@ -632,6 +628,29 @@
         '<div class="cat-sub">Presupuesto: '+money.format(presupuesto)+'</div>'
         : '<div class="cat-sub">Sin presupuesto asignado</div>') +
       '</div></div>';
+  }
+
+  function renderCompartidos(){
+    var d = state.data;
+    if(!d) return;
+    var anual = state.mode === "anual";
+    var ct = anual ? d.compartidos.totalAnual : d.compartidos.total;
+    var ce = anual ? d.compartidos.entre2Anual : d.compartidos.entre2;
+
+    $("compartidosStats").innerHTML =
+      statCard("Total casa " + (anual?"anual":"del mes"), money.format(ct)) +
+      statCard("Tu mitad", money.format(ce));
+
+    var detalle = d.compartidos.detalle || [];
+    $("compartidosDetalle").innerHTML = detalle.map(function(item){
+      var valor = anual ? item.totalAnual : item.valorMes;
+      var mitad = valor / 2;
+      return '<div class="cat-row">' + catIcon(item.nombre) +
+        '<div class="cat-row-body">' +
+        '<div class="cat-top"><span class="cat-name">'+item.nombre+'</span><span class="cat-amount">'+money.format(valor)+'</span></div>' +
+        '<div class="cat-sub">Tu mitad: '+money.format(mitad)+'</div>' +
+        '</div></div>';
+    }).join("") || '<div class="empty-note">Sin gastos compartidos este período.</div>';
   }
 
   function statCard(label, value, cls){
@@ -737,9 +756,11 @@
     document.querySelectorAll("nav.bottom button[data-view]").forEach(function(b){ b.classList.remove("active"); });
     document.querySelector('[data-view="'+view+'"]').classList.add("active");
     if(view === "viewHistorial") loadMovimientos();
+    if(view === "viewCompartidos") renderCompartidos();
   }
   $("navResumen").onclick = function(){ switchView("viewResumen"); };
   $("navHistorial").onclick = function(){ switchView("viewHistorial"); };
+  $("navCompartidos").onclick = function(){ switchView("viewCompartidos"); };
 
   // ====== Sheet / formulario de movimiento ======
   var currentType = "GASTO";
