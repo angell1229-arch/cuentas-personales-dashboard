@@ -130,6 +130,11 @@
     font-size:13px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;
     margin:22px 4px 10px;display:flex;justify-content:space-between;align-items:center;
   }
+  .filter-row{display:flex;gap:8px;margin-bottom:12px;}
+  .filter-row select{
+    flex:1;padding:9px 10px;border-radius:12px;border:1.5px solid var(--border);
+    background:var(--surface);color:var(--text);font-size:12.5px;font-weight:600;font-family:inherit;
+  }
   .section-title span.tag{
     background:var(--surface-2);color:var(--text-dim);font-size:11px;font-weight:700;
     padding:3px 9px;border-radius:20px;text-transform:none;
@@ -378,6 +383,10 @@
 
     <div class="view" id="viewHistorial">
       <div class="section-title">Todos los gastos del período <span class="tag" id="historialCount"></span></div>
+      <div class="filter-row">
+        <select id="filtroCategoria"><option value="">Todas las categorías</option></select>
+        <select id="filtroPersona"><option value="">Todas las personas</option></select>
+      </div>
       <div class="card" id="historialList"></div>
     </div>
 
@@ -435,7 +444,10 @@
       <div class="row2" id="bancoCuotaField">
         <div>
           <label>Banco</label>
-          <input type="text" id="fBanco" placeholder="Opcional">
+          <select id="fBanco">
+            <option value="">Sin banco</option>
+          </select>
+          <input type="text" id="fBancoOtro" placeholder="Nombre del banco" style="display:none;margin-top:8px;">
         </div>
         <div>
           <label>Cuota</label>
@@ -691,6 +703,7 @@
       .then(function(json){
         if(!json.ok) throw new Error(json.error || "Error desconocido");
         state.movimientos = json.movimientos;
+        populateFiltros();
         renderHistorial();
       })
       .catch(function(err){
@@ -698,8 +711,32 @@
       });
   }
 
+  function populateFiltros(){
+    var movs = state.movimientos || [];
+    var catsUsadas = Array.from(new Set(movs.map(function(m){ return m.categoria; }))).sort();
+    var personasUsadas = Array.from(new Set(movs.map(function(m){ return m.persona; }))).sort();
+
+    var catActual = $("filtroCategoria").value;
+    var personaActual = $("filtroPersona").value;
+
+    $("filtroCategoria").innerHTML = '<option value="">Todas las categorías</option>' +
+      catsUsadas.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join("");
+    $("filtroPersona").innerHTML = '<option value="">Todas las personas</option>' +
+      personasUsadas.map(function(p){ return '<option value="'+p+'">'+p+'</option>'; }).join("");
+
+    $("filtroCategoria").value = catsUsadas.indexOf(catActual) !== -1 ? catActual : "";
+    $("filtroPersona").value = personasUsadas.indexOf(personaActual) !== -1 ? personaActual : "";
+  }
+  $("filtroCategoria").onchange = renderHistorial;
+  $("filtroPersona").onchange = renderHistorial;
+
   function renderHistorial(){
     var movs = state.movimientos || [];
+    var filtroCat = $("filtroCategoria").value;
+    var filtroPersona = $("filtroPersona").value;
+    if(filtroCat) movs = movs.filter(function(m){ return m.categoria === filtroCat; });
+    if(filtroPersona) movs = movs.filter(function(m){ return m.persona === filtroPersona; });
+
     $("historialCount").textContent = movs.length + " gastos";
     $("historialList").innerHTML = movs.map(function(m){
       return '<div class="mov-row" data-fila="'+m.fila+'">' + catIcon(m.categoria) +
@@ -772,12 +809,38 @@
 
     var personas = (state.listas && state.listas.personas) || PERSONAS;
     $("fPersona").innerHTML = personas.map(function(p){ return '<option value="'+p+'">'+p+'</option>'; }).join("");
+
+    var bancos = (state.listas && state.listas.bancos) || [];
+    $("fBanco").innerHTML = '<option value="">Sin banco</option>' +
+      bancos.map(function(b){ return '<option value="'+b+'">'+b+'</option>'; }).join("") +
+      '<option value="__OTRO__">+ Otro banco...</option>';
   }
+
+  function getBancoValue(){
+    return $("fBanco").value === "__OTRO__" ? $("fBancoOtro").value.trim() : $("fBanco").value;
+  }
+  function setBancoValue(banco){
+    var opciones = Array.from($("fBanco").options).map(function(o){ return o.value.toUpperCase(); });
+    var bancoUpper = (banco || "").toUpperCase();
+    if(banco && opciones.indexOf(bancoUpper) === -1){
+      $("fBanco").value = "__OTRO__";
+      $("fBancoOtro").value = banco;
+      $("fBancoOtro").style.display = "block";
+    } else {
+      $("fBanco").value = banco || "";
+      $("fBancoOtro").style.display = "none";
+      $("fBancoOtro").value = "";
+    }
+  }
+  $("fBanco").onchange = function(){
+    $("fBancoOtro").style.display = $("fBanco").value === "__OTRO__" ? "block" : "none";
+  };
 
   function openSheet(){
     editingFila = null;
     $("typeTabs").style.display = "flex";
     $("entryForm").reset();
+    $("fBancoOtro").style.display = "none";
     $("fFecha").value = new Date().toISOString().slice(0,10);
     setType("GASTO");
     $("backdrop").classList.add("show");
@@ -794,7 +857,7 @@
     $("fCategoria").value = mov.categoria;
     $("fValor").value = mov.valor;
     $("fPersona").value = mov.persona;
-    $("fBanco").value = mov.banco || "";
+    setBancoValue(mov.banco);
     $("fCuota").value = mov.cuota || 1;
     $("fDetalle").value = mov.detalle || "";
     $("fFecha").value = new Date(state.year, state.monthIdx, mov.dia || 1).toISOString().slice(0,10);
@@ -856,7 +919,7 @@
         fila: editingFila,
         categoria: $("fCategoria").value,
         persona: $("fPersona").value,
-        banco: $("fBanco").value,
+        banco: getBancoValue(),
         cuota: $("fCuota").value || 1,
         valor: valor,
         detalle: $("fDetalle").value || ""
