@@ -119,7 +119,8 @@
   .view.active{display:block;}
 
   /* ---------- Cards ---------- */
-  main{flex:1;padding:16px 16px calc(96px + var(--safe-bottom));}
+  /* El extra abajo deja aire para la barra de navegación y el FAB flotante. */
+  main{flex:1;padding:16px 16px calc(140px + var(--safe-bottom));}
 
   .stat-scroll{
     display:flex;gap:10px;overflow-x:auto;margin:-16px -16px 16px;padding:16px;
@@ -212,16 +213,19 @@
   }
   nav.bottom button{
     background:none;border:none;color:var(--text-dim);display:flex;flex-direction:column;
-    align-items:center;gap:3px;font-size:10.5px;font-weight:600;cursor:pointer;padding:4px 10px;
+    align-items:center;gap:3px;font-size:9.5px;font-weight:600;cursor:pointer;padding:4px 3px;
+    flex:1;min-width:0;
   }
   nav.bottom button.active{color:var(--accent);}
+  /* FAB flotante sobre la barra: así cabe una pestaña más sin apretar el nav. */
   .fab{
+    position:fixed;right:16px;bottom:calc(74px + var(--safe-bottom));z-index:31;
     width:56px;height:56px;border-radius:50%;
     background:linear-gradient(160deg,var(--accent),var(--accent-2));
     color:#fff;border:none;font-size:28px;line-height:1;
     display:flex;align-items:center;justify-content:center;
     box-shadow:0 8px 18px rgba(10,80,90,0.45);
-    margin-top:-34px;cursor:pointer;
+    cursor:pointer;flex:none;
   }
 
   /* ---------- Sheet / Modal ---------- */
@@ -283,6 +287,28 @@
     background:var(--accent);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
   }
   .budget-bar-save:disabled{opacity:.6;}
+
+  /* ---------- Ahorro: histórico por año ---------- */
+  .year-row{padding:12px 0;border-bottom:1px solid var(--border);}
+  .year-row:last-child{border-bottom:none;}
+  .year-top{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:6px;}
+  .year-label{font-size:14px;font-weight:800;}
+  .year-amount{font-size:14px;font-weight:700;color:var(--green);}
+  .year-track{height:10px;border-radius:6px;background:var(--surface-2);overflow:hidden;}
+  .year-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--mint),var(--accent));transition:width .5s ease;}
+  .year-sub{font-size:11px;color:var(--text-dim);margin-top:5px;display:flex;gap:10px;flex-wrap:wrap;}
+
+  .kpi-note{
+    background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:14px 16px;font-size:13px;line-height:1.5;margin-bottom:6px;
+  }
+  .kpi-note b{color:var(--accent);}
+
+  .mini-months{display:flex;align-items:flex-end;gap:3px;height:54px;padding:10px 0 4px;}
+  .mini-months .mm{flex:1;background:var(--surface-2);border-radius:3px 3px 0 0;min-height:2px;position:relative;}
+  .mini-months .mm.has{background:var(--mint);}
+  .mini-labels{display:flex;gap:3px;padding-bottom:6px;}
+  .mini-labels span{flex:1;text-align:center;font-size:8.5px;color:var(--text-dim);font-weight:700;}
 
   .presu-total-display{
     background:var(--surface-2);border-radius:14px;padding:14px 16px;margin:2px 0 4px;
@@ -348,14 +374,15 @@
     }
     nav.bottom button.active{background:var(--accent);color:#fff;}
     .fab{
-      order:-1;margin-top:0;width:100%;height:48px;border-radius:14px;font-size:20px;
+      position:static;order:-1;margin-top:0;width:100%;height:48px;border-radius:14px;font-size:20px;
       flex-direction:row;gap:8px;
     }
+    nav.bottom button{font-size:14px;flex:none;}
     .fab::after{content:"Nuevo movimiento";font-size:13.5px;font-weight:700;}
 
     main{grid-column:2;grid-row:2;padding:20px 0 40px;}
     .stat-scroll{
-      display:grid;grid-template-columns:repeat(5,1fr);overflow:visible;margin:0 0 20px;padding:0;
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));overflow:visible;margin:0 0 20px;padding:0;
     }
     .stat-card{flex:none;}
 
@@ -441,11 +468,22 @@
     <div class="view" id="viewPresupuesto">
       <div class="stat-scroll" id="presupuestoStats"></div>
 
-      <div class="section-title">Distribución del presupuesto <span class="tag">mayor a menor</span></div>
+      <div class="section-title">Presupuesto por categoría <span class="tag">mayor a menor</span></div>
       <div class="card" style="padding:6px 16px;" id="presupuestoBars"></div>
+    </div>
 
-      <div class="section-title">Presupuesto por categoría <span class="tag">toca una para editar</span></div>
-      <div class="card" style="padding:6px 16px;" id="presupuestoLista"></div>
+    <div class="view" id="viewAhorro">
+      <div class="stat-scroll" id="ahorroStats"></div>
+      <div class="kpi-note" id="ahorroNote"></div>
+
+      <div class="section-title">Ahorro mes a mes <span class="tag" id="ahorroAnioTag"></span></div>
+      <div class="card" style="padding:10px 16px;" id="ahorroMeses"></div>
+
+      <div class="section-title">Ahorro por año <span class="tag" id="ahorroAcumuladoTag"></span></div>
+      <div class="card" style="padding:6px 16px;" id="ahorroPorAnio"></div>
+
+      <div class="section-title">Ganancias extra por año</div>
+      <div class="card" style="padding:6px 16px;" id="gananciasPorAnio"></div>
     </div>
 
   </main>
@@ -467,6 +505,10 @@
     <button data-view="viewPresupuesto" id="navPresupuesto">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
       Presupuesto
+    </button>
+    <button data-view="viewAhorro" id="navAhorro">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/></svg>
+      Ahorro
     </button>
   </nav>
 
@@ -490,7 +532,7 @@
       </div>
 
       <label>Valor ($)</label>
-      <input type="number" id="fValor" inputmode="decimal" placeholder="0" required min="0" step="1">
+      <input type="text" id="fValor" inputmode="numeric" placeholder="0" required>
 
       <div id="personaField">
         <label>¿De quién es?</label>
@@ -664,7 +706,8 @@
     monthIdx: now.getMonth(),
     data: null,
     listas: null,
-    movimientos: null
+    movimientos: null,
+    historico: null
   };
 
   var $ = function(id){ return document.getElementById(id); };
@@ -688,6 +731,19 @@
   function saveCache(json){ try{ localStorage.setItem(cacheKey(), JSON.stringify(json)); }catch(e){} }
   function loadCache(){ try{ var v = localStorage.getItem(cacheKey()); return v ? JSON.parse(v) : null; }catch(e){ return null; } }
 
+  // ====== Helpers de agregación ======
+  // Una sola definición de "qué categorías cuentan como gasto normal": antes este
+  // filtro estaba repetido en cada render y era fácil que se desincronizaran.
+  function categoriasGasto(d){
+    return d.categorias.filter(function(c){ return c.nombre !== "Compra de casa" && c.nombre !== "GANANCIAS"; });
+  }
+  function sumaCampo(cats, campoAnual, campoMes, anual){
+    return cats.reduce(function(acc,c){ return acc + (Number(anual ? c[campoAnual] : c[campoMes]) || 0); }, 0);
+  }
+  function esAnual(){ return state.mode === "anual"; }
+  function sufijoPeriodo(){ return esAnual() ? "anual" : "del mes"; }
+  function pctSeguro(parte, total){ return total > 0 ? (parte / total * 100) : 0; }
+
   // ====== Render ======
   function periodLabel(){
     if(state.mode === "anual") return String(state.year);
@@ -699,27 +755,30 @@
     var d = state.data;
     if(!d){ return; }
 
-    var anual = state.mode === "anual";
+    var anual = esAnual();
     var gasto = anual ? d.subTotalAnual : d.subTotal;
     var sueldo = anual ? d.sueldoAnual : d.sueldo;
     var ahorro = anual ? d.ahorroAnual : d.ahorro;
+    var ganancias = Number(anual ? d.gananciasAnual : d.ganancias) || 0;
     var diferencia = sueldo - gasto - ahorro;
 
-    var presupuestoTotal = d.categorias.reduce(function(acc,c){ return acc + (anual ? c.presupuestoAnual : c.presupuestoMensual); }, 0);
+    var visibles = categoriasGasto(d);
+    var presupuestoTotal = sumaCampo(visibles, "presupuestoAnual", "presupuestoMensual", anual);
 
     $("statScroll").innerHTML =
-      statCard("Gasto " + (anual?"anual":"del mes"), money.format(gasto)) +
+      statCard("Gasto " + sufijoPeriodo(), money.format(gasto)) +
       statCard("Presupuesto", money.format(presupuestoTotal)) +
       statCard("Sueldo", money.format(sueldo)) +
+      statCard("Ganancias", money.format(ganancias), ganancias > 0 ? "pos" : "") +
       statCard("Ahorro", money.format(ahorro)) +
       statCard("Disponible", money.format(diferencia), diferencia >= 0 ? "pos" : "neg");
 
     renderCompartidos();
     renderPresupuestoStats();
     renderPresupuestoBars();
+    renderAhorro();
 
     // Categorías, separadas en Fijos / Variables
-    var visibles = d.categorias.filter(function(c){ return c.nombre !== "Compra de casa" && c.nombre !== "GANANCIAS"; });
     var fijos = visibles.filter(function(c){ return c.tipo === "FIJO"; });
     var variables = visibles.filter(function(c){ return c.tipo !== "FIJO"; });
 
@@ -793,16 +852,18 @@
   function renderPresupuestoStats(){
     var d = state.data;
     if(!d) return;
-    var anual = state.mode === "anual";
-    var cats = d.categorias.filter(function(c){ return c.nombre !== "Compra de casa" && c.nombre !== "GANANCIAS"; });
-    var totalPresupuesto = cats.reduce(function(acc,c){ return acc + (anual ? c.presupuestoAnual : c.presupuestoMensual); }, 0);
-    var totalGasto = cats.reduce(function(acc,c){ return acc + (anual ? c.totalAnual : c.valorMes); }, 0);
-    var pct = totalPresupuesto > 0 ? (totalGasto / totalPresupuesto * 100) : 0;
+    var anual = esAnual();
+    var cats = categoriasGasto(d);
+    var totalPresupuesto = sumaCampo(cats, "presupuestoAnual", "presupuestoMensual", anual);
+    var totalGasto = sumaCampo(cats, "totalAnual", "valorMes", anual);
+    var pct = pctSeguro(totalGasto, totalPresupuesto);
+    var restante = totalPresupuesto - totalGasto;
 
     $("presupuestoStats").innerHTML =
-      statCard("Presupuesto " + (anual?"anual":"del mes"), money.format(totalPresupuesto)) +
+      statCard("Presupuesto " + sufijoPeriodo(), money.format(totalPresupuesto)) +
       statCard("Gastado", money.format(totalGasto)) +
-      statCard("% usado", pct.toFixed(0) + "%", pct > 100 ? "neg" : "pos");
+      statCard("% usado", pct.toFixed(0) + "%", pct > 100 ? "neg" : "pos") +
+      statCard(restante >= 0 ? "Te queda" : "Te pasaste", money.format(Math.abs(restante)), restante >= 0 ? "pos" : "neg");
   }
 
   var CHART_PALETTE = ["#0d6e7d","#1fb894","#e08e2e","#e0503f","#7c5cbf","#2b8fd1","#c2447a","#4caf50","#9c6b1f","#5f7d8c","#d1495b","#3f7d5c","#7a9e2e","#b8862e"];
@@ -810,44 +871,66 @@
   function renderPresupuestoBars(){
     var d = state.data;
     if(!d) return;
-    var anual = state.mode === "anual";
+    var anual = esAnual();
 
-    var cats = d.categorias
-      .filter(function(c){ return c.nombre !== "Compra de casa" && c.nombre !== "GANANCIAS"; })
-      .map(function(c){ return { nombre: c.nombre, valor: anual ? c.presupuestoAnual : c.presupuestoMensual, totalAnual: c.presupuestoAnual }; })
-      .filter(function(c){ return c.valor > 0; })
-      .sort(function(a,b){ return b.valor - a.valor; });
+    var cats = categoriasGasto(d).map(function(c){
+      return {
+        nombre: c.nombre,
+        valor: Number(anual ? c.presupuestoAnual : c.presupuestoMensual) || 0,
+        totalAnual: Number(c.presupuestoAnual) || 0,
+        gastado: Number(anual ? c.totalAnual : c.valorMes) || 0,
+        meta: false
+      };
+    });
 
-    if(!cats.length){
-      $("presupuestoBars").innerHTML = '<div class="empty-note">Aún no tienes presupuesto asignado a categorías.</div>';
-      return;
-    }
+    // El ahorro entra como una meta más: así se ve qué parte del plan se va en
+    // gastos y qué parte queda reservada para ahorrar.
+    cats.push({
+      nombre: "AHORRO",
+      valor: Number(anual ? d.ahorroPresupuestoAnual : d.ahorroPresupuesto) || 0,
+      totalAnual: Number(d.ahorroPresupuestoAnual) || 0,
+      gastado: Number(anual ? d.ahorroAnual : d.ahorro) || 0,
+      meta: true
+    });
+
+    // Se muestran TODAS (incluidas las que están en 0), si no, una categoría sin
+    // presupuesto quedaría oculta y nunca se le podría asignar uno.
+    cats.sort(function(a,b){ return b.valor - a.valor; });
 
     var total = cats.reduce(function(acc,c){ return acc + c.valor; }, 0);
-    var maxValor = cats[0].valor;
+    var maxValor = cats.length ? cats[0].valor : 0;
 
     $("presupuestoBars").innerHTML = cats.map(function(c, i){
-      var color = CHART_PALETTE[i % CHART_PALETTE.length];
-      var pct = total > 0 ? (c.valor / total * 100) : 0;
-      var widthPct = maxValor > 0 ? (c.valor / maxValor * 100) : 0;
+      var color = c.meta ? "var(--mint)" : CHART_PALETTE[i % CHART_PALETTE.length];
+      var pct = pctSeguro(c.valor, total);
+      var widthPct = pctSeguro(c.valor, maxValor);
+      var sub = c.valor > 0
+        ? (c.meta ? "Ahorrado: " : "Gastado: ") + money.format(c.gastado) + " · " + pctSeguro(c.gastado, c.valor).toFixed(0) + "% de la meta"
+        : "Sin presupuesto asignado";
       return '<div class="budget-bar-row">' +
         '<div class="budget-bar-top">' + catIcon(c.nombre) +
-        '<span class="budget-bar-name">'+c.nombre+'</span>' +
+        '<span class="budget-bar-name">'+c.nombre+(c.meta?' <span class="tag" style="font-size:9px;padding:1px 6px;">meta</span>':'')+'</span>' +
         '<span class="budget-bar-pct">'+pct.toFixed(1)+'%</span>' +
         '</div>' +
         '<div class="budget-bar-track"><div class="budget-bar-fill" style="width:'+widthPct.toFixed(1)+'%;background:'+color+'"></div></div>' +
+        '<div class="cat-sub">'+sub+'</div>' +
         '<div class="budget-bar-edit">' +
         '<input type="text" inputmode="numeric" class="budget-bar-input" value="'+formatMiles(c.totalAnual)+'" placeholder="Presupuesto anual">' +
-        '<button type="button" class="budget-bar-save" title="Guardar">✓</button>' +
+        '<button type="button" class="budget-bar-save" title="Guardar presupuesto anual">✓</button>' +
+        '<button type="button" class="budget-bar-save budget-bar-months" title="Editar mes a mes" style="background:var(--surface-2);color:var(--accent);">▤</button>' +
         '</div>' +
         '</div>';
     }).join("");
 
     document.querySelectorAll("#presupuestoBars .budget-bar-row").forEach(function(row, i){
       var input = row.querySelector(".budget-bar-input");
-      var btn = row.querySelector(".budget-bar-save");
       attachMilesInput(input);
-      btn.onclick = function(){ guardarPresupuestoAnualInline(cats[i].nombre, input, btn); };
+      row.querySelector(".budget-bar-save").onclick = function(e){
+        guardarPresupuestoAnualInline(cats[i].nombre, input, e.currentTarget);
+      };
+      row.querySelector(".budget-bar-months").onclick = function(){
+        openPresupuestoEdit(cats[i].nombre);
+      };
     });
   }
 
@@ -863,6 +946,7 @@
       .then(function(json){
         if(!json.ok) throw new Error(json.error || "Error desconocido");
         showToast("Presupuesto actualizado ✓", "ok");
+        loadPresupuesto();
         loadData(true);
       })
       .catch(function(err){
@@ -875,6 +959,125 @@
 
   function statCard(label, value, cls){
     return '<div class="stat-card"><div class="label">'+label+'</div><div class="value'+(cls?" "+cls:"")+'">'+value+'</div></div>';
+  }
+
+  // ====== Ahorro: KPIs del período + histórico por año ======
+  function renderAhorro(){
+    var d = state.data;
+    if(!d) return;
+    var anual = esAnual();
+
+    var ahorro = Number(anual ? d.ahorroAnual : d.ahorro) || 0;
+    var sueldo = Number(anual ? d.sueldoAnual : d.sueldo) || 0;
+    var ganancias = Number(anual ? d.gananciasAnual : d.ganancias) || 0;
+    var meta = Number(anual ? d.ahorroPresupuestoAnual : d.ahorroPresupuesto) || 0;
+    var ingresos = sueldo + ganancias;
+
+    // Tasa de ahorro: el KPI estándar de finanzas personales (referencia: 20%).
+    var tasa = pctSeguro(ahorro, ingresos);
+    var cumplimiento = pctSeguro(ahorro, meta);
+
+    var hist = state.historico || [];
+    var acumulado = hist.reduce(function(acc,a){ return acc + (Number(a.ahorro)||0); }, 0);
+
+    $("ahorroStats").innerHTML =
+      statCard("Ahorro " + sufijoPeriodo(), money.format(ahorro), ahorro > 0 ? "pos" : "") +
+      statCard("Tasa de ahorro", tasa.toFixed(1) + "%", tasa >= 20 ? "pos" : (tasa > 0 ? "" : "neg")) +
+      statCard("Meta " + sufijoPeriodo(), meta > 0 ? money.format(meta) : "Sin meta") +
+      statCard("Meta cumplida", meta > 0 ? cumplimiento.toFixed(0)+"%" : "—", cumplimiento >= 100 ? "pos" : "") +
+      statCard("Ganancias " + sufijoPeriodo(), money.format(ganancias), ganancias > 0 ? "pos" : "") +
+      statCard("Ahorro acumulado", money.format(acumulado), acumulado > 0 ? "pos" : "");
+
+    var nota;
+    if(ingresos <= 0){
+      nota = 'Aún no hay ingresos registrados en este período, así que no se puede calcular la tasa de ahorro.';
+    } else if(meta > 0 && ahorro >= meta){
+      nota = '¡Vas cumpliendo! Ahorraste <b>'+money.format(ahorro)+'</b> de una meta de <b>'+money.format(meta)+'</b>. Tu tasa de ahorro es <b>'+tasa.toFixed(1)+'%</b> de tus ingresos.';
+    } else if(meta > 0){
+      nota = 'Te faltan <b>'+money.format(meta - ahorro)+'</b> para llegar a tu meta de <b>'+money.format(meta)+'</b>. Tasa de ahorro actual: <b>'+tasa.toFixed(1)+'%</b>.';
+    } else {
+      nota = 'Estás ahorrando el <b>'+tasa.toFixed(1)+'%</b> de tus ingresos. La referencia habitual es 20%. Puedes fijar una meta en la pestaña Presupuesto (fila AHORRO).';
+    }
+    $("ahorroNote").innerHTML = nota;
+
+    renderAhorroMeses();
+    renderHistoricoAnios();
+  }
+
+  // Mini gráfico de barras de los 12 meses del año seleccionado.
+  function renderAhorroMeses(){
+    var hist = state.historico || [];
+    var anioActual = hist.find(function(a){ return a.anio === state.year; });
+    $("ahorroAnioTag").textContent = String(state.year);
+
+    if(!anioActual || !anioActual.ahorroMeses){
+      $("ahorroMeses").innerHTML = '<div class="empty-note">Sin datos de ahorro para '+state.year+'.</div>';
+      return;
+    }
+    var meses = anioActual.ahorroMeses;
+    var max = Math.max.apply(null, meses.concat([1]));
+
+    $("ahorroMeses").innerHTML =
+      '<div class="mini-months">' + meses.map(function(v){
+        var h = Math.max(2, (v / max) * 100);
+        return '<div class="mm'+(v>0?' has':'')+'" style="height:'+h+'%" title="'+money.format(v)+'"></div>';
+      }).join("") + '</div>' +
+      '<div class="mini-labels">' + MESES_LABEL.map(function(m){
+        return '<span>'+m.slice(0,1)+'</span>';
+      }).join("") + '</div>' +
+      '<div class="cat-sub">Mejor mes: '+money.format(max)+' · Total '+state.year+': '+money.format(meses.reduce(function(a,b){return a+b;},0))+'</div>';
+  }
+
+  function renderHistoricoAnios(){
+    var hist = state.historico;
+    if(!hist){
+      $("ahorroPorAnio").innerHTML = '<div class="empty-note">Cargando histórico…</div>';
+      $("gananciasPorAnio").innerHTML = '';
+      return;
+    }
+    if(!hist.length){
+      $("ahorroPorAnio").innerHTML = '<div class="empty-note">Sin datos históricos.</div>';
+      $("gananciasPorAnio").innerHTML = '';
+      return;
+    }
+
+    var acumulado = hist.reduce(function(acc,a){ return acc + (Number(a.ahorro)||0); }, 0);
+    $("ahorroAcumuladoTag").textContent = "total " + money.format(acumulado);
+
+    var maxAhorro = Math.max.apply(null, hist.map(function(a){ return Number(a.ahorro)||0; }).concat([1]));
+    $("ahorroPorAnio").innerHTML = hist.slice().reverse().map(function(a){
+      var ahorro = Number(a.ahorro)||0;
+      var ingresos = (Number(a.sueldo)||0) + (Number(a.ganancias)||0);
+      var tasa = pctSeguro(ahorro, ingresos);
+      return '<div class="year-row">' +
+        '<div class="year-top"><span class="year-label">'+a.anio+'</span><span class="year-amount">'+money.format(ahorro)+'</span></div>' +
+        '<div class="year-track"><div class="year-fill" style="width:'+pctSeguro(ahorro,maxAhorro).toFixed(1)+'%"></div></div>' +
+        '<div class="year-sub"><span>Tasa: '+tasa.toFixed(1)+'%</span><span>Ingresos: '+money.format(ingresos)+'</span><span>Gasto: '+money.format(Number(a.gasto)||0)+'</span></div>' +
+        '</div>';
+    }).join("");
+
+    var maxGan = Math.max.apply(null, hist.map(function(a){ return Number(a.ganancias)||0; }).concat([1]));
+    var totalGan = hist.reduce(function(acc,a){ return acc + (Number(a.ganancias)||0); }, 0);
+    $("gananciasPorAnio").innerHTML = hist.slice().reverse().map(function(a){
+      var g = Number(a.ganancias)||0;
+      return '<div class="year-row">' +
+        '<div class="year-top"><span class="year-label">'+a.anio+'</span><span class="year-amount">'+money.format(g)+'</span></div>' +
+        '<div class="year-track"><div class="year-fill" style="width:'+pctSeguro(g,maxGan).toFixed(1)+'%"></div></div>' +
+        '</div>';
+    }).join("") + '<div class="cat-sub" style="padding-bottom:10px;">Total ganancias extra registradas: <b>'+money.format(totalGan)+'</b></div>';
+  }
+
+  function loadHistorico(){
+    if(state.historico) return Promise.resolve();
+    return apiGet({ accion: "historico" })
+      .then(function(json){
+        if(!json.ok) throw new Error(json.error || "Error desconocido");
+        state.historico = json.anios;
+        renderAhorro();
+      })
+      .catch(function(err){
+        $("ahorroPorAnio").innerHTML = '<div class="empty-note">Error cargando histórico: '+err.message+'</div>';
+      });
   }
 
   // ====== Carga de datos ======
@@ -1003,11 +1206,13 @@
     if(view === "viewHistorial") loadMovimientos();
     if(view === "viewCompartidos") renderCompartidos();
     if(view === "viewPresupuesto") loadPresupuesto();
+    if(view === "viewAhorro"){ renderAhorro(); loadHistorico(); }
   }
   $("navResumen").onclick = function(){ switchView("viewResumen"); };
   $("navHistorial").onclick = function(){ switchView("viewHistorial"); };
   $("navCompartidos").onclick = function(){ switchView("viewCompartidos"); };
   $("navPresupuesto").onclick = function(){ switchView("viewPresupuesto"); };
+  $("navAhorro").onclick = function(){ switchView("viewAhorro"); };
 
   // ====== Sheet / formulario de movimiento ======
   var currentType = "GASTO";
@@ -1065,7 +1270,7 @@
     setType("GASTO");
     $("sheetTitle").textContent = "Editar gasto";
     $("fCategoria").value = mov.categoria;
-    $("fValor").value = mov.valor;
+    $("fValor").value = formatMiles(Math.round(Number(mov.valor) || 0));
     $("fPersona").value = mov.persona;
     setBancoValue(mov.banco);
     $("fCuota").value = mov.cuota || 1;
@@ -1115,7 +1320,7 @@
 
   $("entryForm").addEventListener("submit", function(e){
     e.preventDefault();
-    var valor = parseFloat($("fValor").value);
+    var valor = parseMiles($("fValor").value);
     if(!valor || valor <= 0){ showToast("Ingresa un valor válido", "err"); return; }
 
     var btn = $("submitBtn");
@@ -1140,7 +1345,7 @@
       if(currentType === "GASTO"){
         body.categoria = $("fCategoria").value;
         body.persona = $("fPersona").value;
-        body.banco = $("fBanco").value;
+        body.banco = getBancoValue();
         body.cuota = $("fCuota").value || 1;
       } else if(currentType === "GANANCIA"){
         body.categoria = "GANANCIAS";
@@ -1169,6 +1374,7 @@
   attachMilesInput($("catPresupuesto"));
   attachMilesInput($("presuMontoAnualDirecto"));
   attachMilesInput($("presuMontoAnual"));
+  attachMilesInput($("fValor"));
   var catTipoSeleccionado = "VARIABLE";
   $("addCatBtn").onclick = function(){
     $("catForm").reset();
@@ -1219,34 +1425,22 @@
   // ====== Presupuesto por categoría (editable por mes) ======
   var presupuestoState = { categorias: [], categoriaActual: null };
 
+  // Sólo trae el desglose por mes (lo que el resumen no incluye); la lista
+  // visible se dibuja desde state.data en renderPresupuestoBars().
   function loadPresupuesto(){
-    $("presupuestoLista").innerHTML = '<div class="empty-note">Cargando…</div>';
-    apiGet({ accion: "presupuesto" }).then(function(json){
+    return apiGet({ accion: "presupuesto" }).then(function(json){
       if(!json.ok) throw new Error(json.error || "Error desconocido");
       presupuestoState.categorias = json.categorias;
-      renderPresupuestoLista();
-    }).catch(function(err){
-      $("presupuestoLista").innerHTML = '<div class="empty-note">Error: '+err.message+'</div>';
-    });
-  }
-
-  function renderPresupuestoLista(){
-    $("presupuestoLista").innerHTML = presupuestoState.categorias.map(function(c){
-      return '<div class="cat-row" data-cat="'+c.categoria+'" style="cursor:pointer;">' + catIcon(c.categoria) +
-        '<div class="cat-row-body">' +
-        '<div class="cat-top"><span class="cat-name">'+c.categoria+'</span><span class="cat-amount">'+money.format(c.totalAnual)+'</span></div>' +
-        '<div class="cat-sub">Presupuesto anual · toca para editar por mes</div>' +
-        '</div><span class="edit-chevron">✎</span></div>';
-    }).join("") || '<div class="empty-note">Sin categorías.</div>';
-
-    document.querySelectorAll("#presupuestoLista .cat-row").forEach(function(row){
-      row.onclick = function(){ openPresupuestoEdit(row.dataset.cat); };
-    });
+    }).catch(function(){});
   }
 
   function openPresupuestoEdit(categoria){
     var c = presupuestoState.categorias.find(function(x){ return x.categoria === categoria; });
-    if(!c) return;
+    if(!c){
+      showToast("Cargando datos del mes, intenta de nuevo en un segundo", "err");
+      loadPresupuesto();
+      return;
+    }
     presupuestoState.categoriaActual = categoria;
     $("presupuestoEditTitle").textContent = "Presupuesto · " + categoria;
     $("presuMontoAnualDirecto").value = formatMiles(c.totalAnual);
