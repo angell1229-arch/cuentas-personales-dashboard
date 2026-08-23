@@ -269,6 +269,12 @@
   }
   .link-inline{background:none;border:none;color:var(--accent);font-size:12.5px;font-weight:700;cursor:pointer;padding:0;margin-top:6px;}
 
+  .presu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;}
+  .presu-item{display:flex;flex-direction:column;gap:4px;}
+  .presu-item span{font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase;text-align:center;}
+  .presu-item input{padding:8px 4px;font-size:12.5px;text-align:center;}
+  .presu-hint{font-size:11.5px;color:var(--text-dim);margin:4px 2px 0;line-height:1.4;}
+
   .toast{
     position:fixed;left:50%;bottom:110px;transform:translateX(-50%) translateY(20px);
     background:var(--text);color:var(--bg);padding:12px 18px;border-radius:14px;font-size:13.5px;font-weight:600;
@@ -378,7 +384,12 @@
         <div class="stat-card"><div class="label">Gasto</div><div class="value skeleton" style="height:20px;width:70%">&nbsp;</div></div>
       </div>
 
-      <div class="section-title">Categorías <button class="link-btn" id="addCatBtn">+ Nueva categoría</button></div>
+      <div class="section-title">Categorías
+        <span style="display:flex;gap:14px;">
+          <button class="link-btn" id="editPresupuestoBtn">Presupuesto</button>
+          <button class="link-btn" id="addCatBtn">+ Nueva categoría</button>
+        </span>
+      </div>
       <div class="cat-columns">
         <div class="card">
           <div class="cat-group-title">Gastos fijos</div>
@@ -501,6 +512,39 @@
     </form>
   </div>
 
+  <div class="backdrop" id="presupuestoBackdrop"></div>
+  <div class="sheet" id="presupuestoSheet">
+    <div class="sheet-handle"></div>
+    <button class="close-x" id="closePresupuestoSheet">✕</button>
+    <h2>Presupuesto por categoría</h2>
+    <div class="card" style="padding:6px 16px;" id="presupuestoLista"></div>
+  </div>
+
+  <div class="backdrop" id="presupuestoEditBackdrop"></div>
+  <div class="sheet" id="presupuestoEditSheet">
+    <div class="sheet-handle"></div>
+    <button class="close-x" id="closePresupuestoEditSheet">✕</button>
+    <h2 id="presupuestoEditTitle">Presupuesto</h2>
+
+    <label>Mismo monto los 12 meses</label>
+    <div class="row2">
+      <input type="number" id="presuMontoParejo" placeholder="0" min="0" step="1">
+      <button type="button" class="ghost-btn" id="presuAplicarParejo" style="margin-top:0;">Aplicar</button>
+    </div>
+
+    <label>Distribuir un monto anual por porcentaje</label>
+    <div class="presu-hint">Útil si en algún mes tienes bono o ganancia extra: sube el % de ese mes y baja el resto. Deben sumar 100%.</div>
+    <input type="number" id="presuMontoAnual" placeholder="Monto anual total" min="0" step="1">
+    <div class="presu-grid" id="presuPorcentajes"></div>
+    <button type="button" class="ghost-btn" id="presuAplicarDistribucion">Distribuir por porcentaje</button>
+
+    <label>Presupuesto por mes (editable directo)</label>
+    <div class="presu-grid" id="presuMeses"></div>
+    <div class="presu-hint" id="presuTotalAnual"></div>
+
+    <button type="button" class="submit-btn" id="presuGuardarBtn">Guardar presupuesto</button>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <div class="setup-overlay" id="setupOverlay" style="display:none;">
@@ -620,8 +664,7 @@
     var ahorro = anual ? d.ahorroAnual : d.ahorro;
     var diferencia = sueldo - gasto - ahorro;
 
-    var presupuestoTotal = d.categorias.reduce(function(acc,c){ return acc + c.presupuestoMensual; }, 0);
-    if(anual) presupuestoTotal *= 12;
+    var presupuestoTotal = d.categorias.reduce(function(acc,c){ return acc + (anual ? c.presupuestoAnual : c.presupuestoMensual); }, 0);
 
     $("statScroll").innerHTML =
       statCard("Gasto " + (anual?"anual":"del mes"), money.format(gasto)) +
@@ -656,7 +699,7 @@
 
   function catRow(c, anual){
     var valor = anual ? c.totalAnual : c.valorMes;
-    var presupuesto = anual ? c.presupuestoMensual*12 : c.presupuestoMensual;
+    var presupuesto = anual ? c.presupuestoAnual : c.presupuestoMensual;
     var pct = presupuesto > 0 ? Math.min(100, (valor/presupuesto)*100) : (valor>0?100:0);
     var barClass = presupuesto === 0 ? "" : (valor > presupuesto ? "over" : (pct > 80 ? "warn" : ""));
     return '<div class="cat-row">' + catIcon(c.nombre) +
@@ -1041,6 +1084,131 @@
       btn.textContent = "Crear categoría";
     });
   });
+
+  // ====== Presupuesto por categoría (editable por mes) ======
+  var presupuestoState = { categorias: [], categoriaActual: null };
+
+  $("editPresupuestoBtn").onclick = function(){
+    loadPresupuesto();
+    $("presupuestoBackdrop").classList.add("show");
+    $("presupuestoSheet").classList.add("show");
+  };
+  $("closePresupuestoSheet").onclick = closePresupuestoSheet;
+  $("presupuestoBackdrop").onclick = closePresupuestoSheet;
+  function closePresupuestoSheet(){
+    $("presupuestoBackdrop").classList.remove("show");
+    $("presupuestoSheet").classList.remove("show");
+  }
+
+  function loadPresupuesto(){
+    $("presupuestoLista").innerHTML = '<div class="empty-note">Cargando…</div>';
+    apiGet({ accion: "presupuesto" }).then(function(json){
+      if(!json.ok) throw new Error(json.error || "Error desconocido");
+      presupuestoState.categorias = json.categorias;
+      renderPresupuestoLista();
+    }).catch(function(err){
+      $("presupuestoLista").innerHTML = '<div class="empty-note">Error: '+err.message+'</div>';
+    });
+  }
+
+  function renderPresupuestoLista(){
+    $("presupuestoLista").innerHTML = presupuestoState.categorias.map(function(c){
+      return '<div class="cat-row" data-cat="'+c.categoria+'" style="cursor:pointer;">' + catIcon(c.categoria) +
+        '<div class="cat-row-body">' +
+        '<div class="cat-top"><span class="cat-name">'+c.categoria+'</span><span class="cat-amount">'+money.format(c.totalAnual)+'</span></div>' +
+        '<div class="cat-sub">Presupuesto anual · toca para editar por mes</div>' +
+        '</div><span class="edit-chevron">✎</span></div>';
+    }).join("") || '<div class="empty-note">Sin categorías.</div>';
+
+    document.querySelectorAll("#presupuestoLista .cat-row").forEach(function(row){
+      row.onclick = function(){ openPresupuestoEdit(row.dataset.cat); };
+    });
+  }
+
+  function openPresupuestoEdit(categoria){
+    var c = presupuestoState.categorias.find(function(x){ return x.categoria === categoria; });
+    if(!c) return;
+    presupuestoState.categoriaActual = categoria;
+    $("presupuestoEditTitle").textContent = "Presupuesto · " + categoria;
+    $("presuMontoParejo").value = "";
+    $("presuMontoAnual").value = "";
+
+    $("presuPorcentajes").innerHTML = MESES.map(function(m, i){
+      return '<div class="presu-item"><span>'+MESES_LABEL[i].slice(0,3)+'</span>' +
+        '<input type="number" class="presu-pct" data-mes="'+m+'" value="'+(100/12).toFixed(1)+'" min="0" max="100" step="0.1"></div>';
+    }).join("");
+
+    $("presuMeses").innerHTML = MESES.map(function(m, i){
+      return '<div class="presu-item"><span>'+MESES_LABEL[i].slice(0,3)+'</span>' +
+        '<input type="number" class="presu-mes" data-mes="'+m+'" value="'+(c.meses[m]||0)+'" min="0" step="1"></div>';
+    }).join("");
+
+    document.querySelectorAll(".presu-mes").forEach(function(inp){ inp.oninput = updatePresuTotalAnual; });
+    updatePresuTotalAnual();
+
+    $("presupuestoEditBackdrop").classList.add("show");
+    $("presupuestoEditSheet").classList.add("show");
+  }
+
+  $("closePresupuestoEditSheet").onclick = closePresupuestoEdit;
+  $("presupuestoEditBackdrop").onclick = closePresupuestoEdit;
+  function closePresupuestoEdit(){
+    $("presupuestoEditBackdrop").classList.remove("show");
+    $("presupuestoEditSheet").classList.remove("show");
+  }
+
+  function updatePresuTotalAnual(){
+    var total = 0;
+    document.querySelectorAll(".presu-mes").forEach(function(inp){ total += Number(inp.value) || 0; });
+    $("presuTotalAnual").textContent = "Total anual con estos valores: " + money.format(total);
+  }
+
+  $("presuAplicarParejo").onclick = function(){
+    var monto = Number($("presuMontoParejo").value);
+    if(isNaN(monto) || monto < 0){ showToast("Monto inválido", "err"); return; }
+    document.querySelectorAll(".presu-mes").forEach(function(inp){ inp.value = monto; });
+    updatePresuTotalAnual();
+  };
+
+  $("presuAplicarDistribucion").onclick = function(){
+    var total = Number($("presuMontoAnual").value);
+    if(isNaN(total) || total <= 0){ showToast("Ingresa el monto anual total", "err"); return; }
+    var pcts = {}, suma = 0;
+    document.querySelectorAll(".presu-pct").forEach(function(inp){
+      var v = Number(inp.value) || 0;
+      pcts[inp.dataset.mes] = v;
+      suma += v;
+    });
+    if(suma < 99 || suma > 101){
+      showToast("Los porcentajes deben sumar 100% (suman "+suma.toFixed(1)+"%)", "err");
+      return;
+    }
+    document.querySelectorAll(".presu-mes").forEach(function(inp){
+      inp.value = Math.round(total * (pcts[inp.dataset.mes]||0) / 100);
+    });
+    updatePresuTotalAnual();
+  };
+
+  $("presuGuardarBtn").onclick = function(){
+    var meses = {};
+    document.querySelectorAll(".presu-mes").forEach(function(inp){ meses[inp.dataset.mes] = Number(inp.value) || 0; });
+    var btn = $("presuGuardarBtn");
+    btn.disabled = true;
+    btn.textContent = "Guardando...";
+    apiPost({ accion: "guardarPresupuesto", categoria: presupuestoState.categoriaActual, meses: meses })
+      .then(function(json){
+        if(!json.ok) throw new Error(json.error || "Error desconocido");
+        showToast("Presupuesto actualizado ✓", "ok");
+        closePresupuestoEdit();
+        loadPresupuesto();
+        loadData(true);
+      }).catch(function(err){
+        showToast("Error: " + err.message, "err");
+      }).finally(function(){
+        btn.disabled = false;
+        btn.textContent = "Guardar presupuesto";
+      });
+  };
 
   var toastTimer;
   function showToast(msg, type){
