@@ -269,6 +269,22 @@
   }
   .link-inline{background:none;border:none;color:var(--accent);font-size:12.5px;font-weight:700;cursor:pointer;padding:0;margin-top:6px;}
 
+  .donut-wrap{display:flex;justify-content:center;padding:16px 0 6px;}
+  .donut{width:168px;height:168px;border-radius:50%;position:relative;flex:0 0 auto;}
+  .donut-hole{
+    position:absolute;inset:28px;border-radius:50%;background:var(--surface);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4px;
+  }
+  .donut-hole .v{font-size:14px;font-weight:800;line-height:1.2;}
+  .donut-hole .l{font-size:9px;color:var(--text-dim);text-transform:uppercase;font-weight:700;margin-top:3px;letter-spacing:.3px;}
+  .legend-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);}
+  .legend-row:last-child{border-bottom:none;}
+  .legend-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;}
+  .legend-body{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .legend-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .legend-pct{font-size:11px;color:var(--text-dim);}
+  .legend-amount{font-size:13px;font-weight:700;white-space:nowrap;}
+
   .presu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;}
   .presu-item{display:flex;flex-direction:column;gap:4px;}
   .presu-item span{font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase;text-align:center;}
@@ -418,6 +434,15 @@
 
     <div class="view" id="viewPresupuesto">
       <div class="stat-scroll" id="presupuestoStats"></div>
+
+      <div class="section-title">Distribución del presupuesto</div>
+      <div class="card" id="presupuestoChartCard">
+        <div class="donut-wrap">
+          <div class="donut" id="presupuestoDonut"><div class="donut-hole" id="presupuestoDonutCenter"></div></div>
+        </div>
+        <div id="presupuestoLegend"></div>
+      </div>
+
       <div class="section-title">Presupuesto por categoría <span class="tag">toca una para editar</span></div>
       <div class="card" style="padding:6px 16px;" id="presupuestoLista"></div>
     </div>
@@ -672,6 +697,7 @@
 
     renderCompartidos();
     renderPresupuestoStats();
+    renderPresupuestoChart();
 
     // Categorías, separadas en Fijos / Variables
     var visibles = d.categorias.filter(function(c){ return c.nombre !== "Compra de casa" && c.nombre !== "GANANCIAS"; });
@@ -758,6 +784,52 @@
       statCard("Presupuesto " + (anual?"anual":"del mes"), money.format(totalPresupuesto)) +
       statCard("Gastado", money.format(totalGasto)) +
       statCard("% usado", pct.toFixed(0) + "%", pct > 100 ? "neg" : "pos");
+  }
+
+  var CHART_PALETTE = ["#0d6e7d","#1fb894","#e08e2e","#e0503f","#7c5cbf","#2b8fd1","#c2447a","#4caf50","#9c6b1f","#5f7d8c","#d1495b","#3f7d5c","#7a9e2e","#b8862e"];
+
+  function renderPresupuestoChart(){
+    var d = state.data;
+    if(!d) return;
+    var anual = state.mode === "anual";
+
+    var cats = d.categorias
+      .filter(function(c){ return c.nombre !== "Compra de casa" && c.nombre !== "GANANCIAS"; })
+      .map(function(c){ return { nombre: c.nombre, valor: anual ? c.presupuestoAnual : c.presupuestoMensual }; })
+      .filter(function(c){ return c.valor > 0; })
+      .sort(function(a,b){ return b.valor - a.valor; });
+
+    var total = cats.reduce(function(acc,c){ return acc + c.valor; }, 0);
+
+    if(!cats.length || total <= 0){
+      $("presupuestoDonut").style.background = "var(--surface-2)";
+      $("presupuestoDonutCenter").innerHTML = '<span class="l">Sin presupuesto<br>asignado aún</span>';
+      $("presupuestoLegend").innerHTML = "";
+      return;
+    }
+
+    var acc = 0;
+    var gradientParts = cats.map(function(c, i){
+      var start = acc / total * 100;
+      acc += c.valor;
+      var end = acc / total * 100;
+      c.color = CHART_PALETTE[i % CHART_PALETTE.length];
+      c.pct = c.valor / total * 100;
+      return c.color + ' ' + start.toFixed(2) + '% ' + end.toFixed(2) + '%';
+    });
+
+    $("presupuestoDonut").style.background = 'conic-gradient(' + gradientParts.join(',') + ')';
+    $("presupuestoDonutCenter").innerHTML =
+      '<span class="v">'+money.format(total)+'</span><span class="l">Presupuestado</span>';
+
+    $("presupuestoLegend").innerHTML = cats.map(function(c){
+      return '<div class="legend-row">' +
+        '<span class="legend-dot" style="background:'+c.color+'"></span>' +
+        catIcon(c.nombre) +
+        '<div class="legend-body"><span class="legend-name">'+c.nombre+'</span><span class="legend-pct">'+c.pct.toFixed(1)+'%</span></div>' +
+        '<span class="legend-amount">'+money.format(c.valor)+'</span>' +
+        '</div>';
+    }).join("");
   }
 
   function statCard(label, value, cls){
