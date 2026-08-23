@@ -417,6 +417,7 @@
     </div>
 
     <div class="view" id="viewPresupuesto">
+      <div class="stat-scroll" id="presupuestoStats"></div>
       <div class="section-title">Presupuesto por categoría <span class="tag">toca una para editar</span></div>
       <div class="card" style="padding:6px 16px;" id="presupuestoLista"></div>
     </div>
@@ -670,6 +671,7 @@
       statCard("Disponible", money.format(diferencia), diferencia >= 0 ? "pos" : "neg");
 
     renderCompartidos();
+    renderPresupuestoStats();
 
     // Categorías, separadas en Fijos / Variables
     var visibles = d.categorias.filter(function(c){ return c.nombre !== "Compra de casa" && c.nombre !== "GANANCIAS"; });
@@ -741,6 +743,21 @@
         '<div class="cat-sub">Tu mitad: '+money.format(mitad)+(sinPersona?' · no participa en el balance (viene de Manual)':'')+'</div>' +
         '</div></div>';
     }).join("") || '<div class="empty-note">Sin gastos compartidos este período.</div>';
+  }
+
+  function renderPresupuestoStats(){
+    var d = state.data;
+    if(!d) return;
+    var anual = state.mode === "anual";
+    var cats = d.categorias.filter(function(c){ return c.nombre !== "Compra de casa" && c.nombre !== "GANANCIAS"; });
+    var totalPresupuesto = cats.reduce(function(acc,c){ return acc + (anual ? c.presupuestoAnual : c.presupuestoMensual); }, 0);
+    var totalGasto = cats.reduce(function(acc,c){ return acc + (anual ? c.totalAnual : c.valorMes); }, 0);
+    var pct = totalPresupuesto > 0 ? (totalGasto / totalPresupuesto * 100) : 0;
+
+    $("presupuestoStats").innerHTML =
+      statCard("Presupuesto " + (anual?"anual":"del mes"), money.format(totalPresupuesto)) +
+      statCard("Gastado", money.format(totalGasto)) +
+      statCard("% usado", pct.toFixed(0) + "%", pct > 100 ? "neg" : "pos");
   }
 
   function statCard(label, value, cls){
