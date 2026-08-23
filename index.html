@@ -269,23 +269,20 @@
   }
   .link-inline{background:none;border:none;color:var(--accent);font-size:12.5px;font-weight:700;cursor:pointer;padding:0;margin-top:6px;}
 
-  .donut-wrap{display:flex;justify-content:center;padding:16px 0 6px;}
-  .donut{width:168px;height:168px;border-radius:50%;position:relative;flex:0 0 auto;}
-  .donut-hole{
-    position:absolute;inset:28px;border-radius:50%;background:var(--surface);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4px;
+  .budget-bar-row{padding:12px 0;border-bottom:1px solid var(--border);}
+  .budget-bar-row:last-child{border-bottom:none;}
+  .budget-bar-top{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+  .budget-bar-name{flex:1;min-width:0;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .budget-bar-pct{font-size:11.5px;font-weight:700;color:var(--text-dim);flex:0 0 auto;}
+  .budget-bar-track{height:9px;border-radius:6px;background:var(--surface-2);overflow:hidden;}
+  .budget-bar-fill{height:100%;border-radius:6px;transition:width .4s ease;}
+  .budget-bar-edit{display:flex;align-items:center;gap:8px;margin-top:8px;}
+  .budget-bar-edit input{flex:1;padding:8px 10px;font-size:13px;}
+  .budget-bar-save{
+    flex:0 0 auto;width:36px;height:36px;border-radius:10px;border:none;
+    background:var(--accent);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
   }
-  .donut-hole .v{font-size:14px;font-weight:800;line-height:1.2;}
-  .donut-hole .l{font-size:9px;color:var(--text-dim);text-transform:uppercase;font-weight:700;margin-top:3px;letter-spacing:.3px;}
-  .legend-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;padding:4px 0 8px;}
-  .legend-chip{
-    display:flex;align-items:center;gap:6px;padding:7px 9px;border-radius:11px;
-    background:var(--surface-2);min-width:0;
-  }
-  .legend-chip .legend-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;}
-  .legend-chip .legend-info{min-width:0;flex:1;display:flex;flex-direction:column;}
-  .legend-chip .legend-name{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .legend-chip .legend-pct{font-size:10px;color:var(--text-dim);font-weight:600;}
+  .budget-bar-save:disabled{opacity:.6;}
 
   .presu-total-display{
     background:var(--surface-2);border-radius:14px;padding:14px 16px;margin:2px 0 4px;
@@ -444,13 +441,8 @@
     <div class="view" id="viewPresupuesto">
       <div class="stat-scroll" id="presupuestoStats"></div>
 
-      <div class="section-title">Distribución del presupuesto</div>
-      <div class="card" id="presupuestoChartCard">
-        <div class="donut-wrap">
-          <div class="donut" id="presupuestoDonut"><div class="donut-hole" id="presupuestoDonutCenter"></div></div>
-        </div>
-        <div class="legend-grid" id="presupuestoLegend"></div>
-      </div>
+      <div class="section-title">Distribución del presupuesto <span class="tag">mayor a menor</span></div>
+      <div class="card" style="padding:6px 16px;" id="presupuestoBars"></div>
 
       <div class="section-title">Presupuesto por categoría <span class="tag">toca una para editar</span></div>
       <div class="card" style="padding:6px 16px;" id="presupuestoLista"></div>
@@ -711,7 +703,7 @@
 
     renderCompartidos();
     renderPresupuestoStats();
-    renderPresupuestoChart();
+    renderPresupuestoBars();
 
     // Categorías, separadas en Fijos / Variables
     var visibles = d.categorias.filter(function(c){ return c.nombre !== "Compra de casa" && c.nombre !== "GANANCIAS"; });
@@ -802,46 +794,70 @@
 
   var CHART_PALETTE = ["#0d6e7d","#1fb894","#e08e2e","#e0503f","#7c5cbf","#2b8fd1","#c2447a","#4caf50","#9c6b1f","#5f7d8c","#d1495b","#3f7d5c","#7a9e2e","#b8862e"];
 
-  function renderPresupuestoChart(){
+  function renderPresupuestoBars(){
     var d = state.data;
     if(!d) return;
     var anual = state.mode === "anual";
 
     var cats = d.categorias
       .filter(function(c){ return c.nombre !== "Compra de casa" && c.nombre !== "GANANCIAS"; })
-      .map(function(c){ return { nombre: c.nombre, valor: anual ? c.presupuestoAnual : c.presupuestoMensual }; })
+      .map(function(c){ return { nombre: c.nombre, valor: anual ? c.presupuestoAnual : c.presupuestoMensual, totalAnual: c.presupuestoAnual }; })
       .filter(function(c){ return c.valor > 0; })
       .sort(function(a,b){ return b.valor - a.valor; });
 
-    var total = cats.reduce(function(acc,c){ return acc + c.valor; }, 0);
-
-    if(!cats.length || total <= 0){
-      $("presupuestoDonut").style.background = "var(--surface-2)";
-      $("presupuestoDonutCenter").innerHTML = '<span class="l">Sin presupuesto<br>asignado aún</span>';
-      $("presupuestoLegend").innerHTML = "";
+    if(!cats.length){
+      $("presupuestoBars").innerHTML = '<div class="empty-note">Aún no tienes presupuesto asignado a categorías.</div>';
       return;
     }
 
-    var acc = 0;
-    var gradientParts = cats.map(function(c, i){
-      var start = acc / total * 100;
-      acc += c.valor;
-      var end = acc / total * 100;
-      c.color = CHART_PALETTE[i % CHART_PALETTE.length];
-      c.pct = c.valor / total * 100;
-      return c.color + ' ' + start.toFixed(2) + '% ' + end.toFixed(2) + '%';
-    });
+    var total = cats.reduce(function(acc,c){ return acc + c.valor; }, 0);
+    var maxValor = cats[0].valor;
 
-    $("presupuestoDonut").style.background = 'conic-gradient(' + gradientParts.join(',') + ')';
-    $("presupuestoDonutCenter").innerHTML =
-      '<span class="v">'+money.format(total)+'</span><span class="l">Presupuestado</span>';
-
-    $("presupuestoLegend").innerHTML = cats.map(function(c){
-      return '<div class="legend-chip">' +
-        '<span class="legend-dot" style="background:'+c.color+'"></span>' +
-        '<div class="legend-info"><span class="legend-name">'+c.nombre+'</span><span class="legend-pct">'+c.pct.toFixed(1)+'%</span></div>' +
+    $("presupuestoBars").innerHTML = cats.map(function(c, i){
+      var color = CHART_PALETTE[i % CHART_PALETTE.length];
+      var pct = total > 0 ? (c.valor / total * 100) : 0;
+      var widthPct = maxValor > 0 ? (c.valor / maxValor * 100) : 0;
+      return '<div class="budget-bar-row">' +
+        '<div class="budget-bar-top">' + catIcon(c.nombre) +
+        '<span class="budget-bar-name">'+c.nombre+'</span>' +
+        '<span class="budget-bar-pct">'+pct.toFixed(1)+'%</span>' +
+        '</div>' +
+        '<div class="budget-bar-track"><div class="budget-bar-fill" style="width:'+widthPct.toFixed(1)+'%;background:'+color+'"></div></div>' +
+        '<div class="budget-bar-edit">' +
+        '<input type="number" class="budget-bar-input" value="'+c.totalAnual+'" min="0" step="1" placeholder="Presupuesto anual">' +
+        '<button type="button" class="budget-bar-save" title="Guardar">✓</button>' +
+        '</div>' +
         '</div>';
     }).join("");
+
+    document.querySelectorAll("#presupuestoBars .budget-bar-row").forEach(function(row, i){
+      var input = row.querySelector(".budget-bar-input");
+      var btn = row.querySelector(".budget-bar-save");
+      btn.onclick = function(){ guardarPresupuestoAnualInline(cats[i].nombre, input, btn); };
+    });
+  }
+
+  function guardarPresupuestoAnualInline(categoria, input, btn){
+    var total = Number(input.value);
+    if(isNaN(total) || total < 0){ showToast("Monto inválido", "err"); return; }
+    var base = Math.floor(total / 12);
+    var resto = total - base * 12;
+    var meses = {};
+    MESES.forEach(function(m, i){ meses[m] = base + (i < resto ? 1 : 0); });
+
+    btn.disabled = true;
+    apiPost({ accion: "guardarPresupuesto", categoria: categoria, meses: meses })
+      .then(function(json){
+        if(!json.ok) throw new Error(json.error || "Error desconocido");
+        showToast("Presupuesto actualizado ✓", "ok");
+        loadData(true);
+      })
+      .catch(function(err){
+        showToast("Error: " + err.message, "err");
+      })
+      .finally(function(){
+        btn.disabled = false;
+      });
   }
 
   function statCard(label, value, cls){
