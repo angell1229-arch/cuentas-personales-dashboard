@@ -182,6 +182,10 @@
   .compartidos-grid .mini{flex:1;text-align:center;}
   .compartidos-grid .mini .v{font-size:16px;font-weight:800;}
   .compartidos-grid .mini .l{font-size:10.5px;color:var(--text-dim);margin-top:2px;}
+  .compartidos-grid .mini .v.pos{color:var(--green);}
+  .compartidos-grid .mini .v.neg{color:var(--red);}
+  .compartidos-grid .mini{cursor:pointer;border-radius:10px;padding:6px 2px;transition:background .15s ease;}
+  .compartidos-grid .mini.active{background:var(--surface-2);}
 
   .skeleton{
     background:linear-gradient(90deg,var(--surface-2) 25%,var(--border) 37%,var(--surface-2) 63%);
@@ -475,6 +479,10 @@
       </button>
       <div class="section-title">Detalle por categoría <span class="tag">50/50 con Pablo</span></div>
       <div class="card" id="compartidosDetalle"></div>
+
+      <div class="section-title">Deudas personales <button class="link-btn" id="addDeudaBtn">+ Movimiento</button></div>
+      <div class="compartidos-grid" id="deudasGrid"></div>
+      <div class="card" id="deudasList"></div>
     </div>
 
     <div class="view" id="viewPresupuesto">
@@ -597,6 +605,42 @@
     </form>
   </div>
 
+  <div class="backdrop" id="deudaBackdrop"></div>
+  <div class="sheet" id="deudaSheet">
+    <div class="sheet-handle"></div>
+    <button class="close-x" id="closeDeudaSheet">✕</button>
+    <h2>Movimiento de deuda</h2>
+    <form id="deudaForm">
+      <label>Persona</label>
+      <select id="dPersona">
+        <option value="Pablo">Pablo</option>
+        <option value="Mamá">Mamá</option>
+        <option value="Papá">Papá</option>
+        <option value="Lagi">Lagi</option>
+      </select>
+
+      <label>Tipo de movimiento</label>
+      <div class="type-tabs" id="deudaTipoTabs">
+        <button type="button" class="active" data-tipo="preste">Le presté</button>
+        <button type="button" data-tipo="mePagaron">Me pagó</button>
+        <button type="button" data-tipo="debo">Me prestó</button>
+        <button type="button" data-tipo="pague">Le pagué</button>
+      </div>
+      <div class="cat-sub" id="deudaTipoHint" style="padding:0 0 12px;"></div>
+
+      <label>Monto ($)</label>
+      <input type="text" id="dMonto" inputmode="numeric" placeholder="0" required>
+
+      <label>Fecha</label>
+      <input type="date" id="dFecha" required>
+
+      <label>Detalle</label>
+      <input type="text" id="dDetalle" placeholder="Opcional">
+
+      <button type="submit" class="submit-btn" id="deudaSubmitBtn">Guardar</button>
+    </form>
+  </div>
+
   <div class="backdrop" id="presupuestoEditBackdrop"></div>
   <div class="sheet" id="presupuestoEditSheet">
     <div class="sheet-handle"></div>
@@ -687,6 +731,7 @@
     'COMPRAS':'<path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>',
     'DEUDA BCI':'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/>',
     'DEUDAS':'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/>',
+    'PAGO DEUDAS':'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/>',
     'SEGUROS':'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/><path d="m9 12 2 2 4-4"/>',
     'SALUD':'<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/><path d="M3.22 13H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/>',
     'ENTEL':'<rect x="6" y="2" width="12" height="20" rx="2.5"/><path d="M11 18.5h2"/>',
@@ -719,8 +764,10 @@
     data: null,
     listas: null,
     movimientos: null,
-    historico: null
+    historico: null,
+    deudas: null
   };
+  var deudaFiltroPersona = "";
 
   var $ = function(id){ return document.getElementById(id); };
 
@@ -859,6 +906,55 @@
         '<div class="cat-sub">Tu mitad: '+money.format(mitad)+(sinPersona?' · no participa en el balance (viene de Manual)':'')+'</div>' +
         '</div></div>';
     }).join("") || '<div class="empty-note">Sin gastos compartidos este período.</div>';
+  }
+
+  // ====== Deudas personales (Pablo/Mamá/Papá/Lagi) — ledger aparte de lo compartido ======
+  function loadDeudas(){
+    return apiGet({ accion: "deudas" }).then(function(json){
+      if(!json.ok) throw new Error(json.error || "Error desconocido");
+      state.deudas = json;
+      renderDeudas();
+    }).catch(function(err){
+      $("deudasList").innerHTML = '<div class="empty-note">Error cargando deudas: '+err.message+'</div>';
+    });
+  }
+
+  function renderDeudas(){
+    var d = state.deudas;
+    if(!d) return;
+    var personas = d.personas || ["Pablo","Mamá","Papá","Lagi"];
+
+    $("deudasGrid").innerHTML = personas.map(function(p){
+      var saldo = Number(d.saldos[p]) || 0;
+      var cls = saldo > 0 ? "pos" : (saldo < 0 ? "neg" : "");
+      var label = saldo > 0 ? p+" te debe" : (saldo < 0 ? "le debes a "+p : p+" al día");
+      return '<div class="mini'+(deudaFiltroPersona===p?" active":"")+'" data-persona="'+p+'">'
+        + '<div class="v '+cls+'">'+money.format(Math.abs(saldo))+'</div>'
+        + '<div class="l">'+label+'</div></div>';
+    }).join("");
+
+    document.querySelectorAll("#deudasGrid .mini").forEach(function(el){
+      el.onclick = function(){
+        deudaFiltroPersona = (deudaFiltroPersona === el.dataset.persona) ? "" : el.dataset.persona;
+        renderDeudas();
+      };
+    });
+
+    var movs = d.movimientos || [];
+    if(deudaFiltroPersona) movs = movs.filter(function(m){ return m.persona === deudaFiltroPersona; });
+
+    $("deudasList").innerHTML = movs.map(function(m){
+      var fecha = new Date(m.fecha);
+      var fechaLabel = isNaN(fecha.getTime()) ? "" : fecha.toLocaleDateString("es-CL");
+      var color = m.monto >= 0 ? "var(--green)" : "var(--red)";
+      var signo = m.monto >= 0 ? "+" : "−";
+      return '<div class="mov-row">' + catIcon("DEUDAS") +
+        '<div class="mov-body">' +
+        '<div class="mov-top"><span class="mov-name">'+m.persona+' · '+m.concepto+(m.detalle?' · '+m.detalle:'')+'</span>'+
+        '<span class="mov-amount" style="color:'+color+'">'+signo+money.format(Math.abs(m.monto))+'</span></div>' +
+        '<div class="mov-sub"><span class="pill">'+fechaLabel+'</span></div>' +
+        '</div></div>';
+    }).join("") || '<div class="empty-note">Sin movimientos'+(deudaFiltroPersona?' con '+deudaFiltroPersona:' de deudas todavía')+'.</div>';
   }
 
   // ====== Resumen compartido como imagen (para mandarle a Pablo) ======
@@ -1418,7 +1514,7 @@
     document.querySelectorAll("nav.bottom button[data-view]").forEach(function(b){ b.classList.remove("active"); });
     document.querySelector('[data-view="'+view+'"]').classList.add("active");
     if(view === "viewHistorial") loadMovimientos();
-    if(view === "viewCompartidos") renderCompartidos();
+    if(view === "viewCompartidos"){ renderCompartidos(); loadDeudas(); }
     if(view === "viewPresupuesto") loadPresupuesto();
     if(view === "viewAhorro"){ renderAhorro(); loadHistorico(); }
   }
@@ -1634,6 +1730,74 @@
     }).finally(function(){
       btn.disabled = false;
       btn.textContent = "Crear categoría";
+    });
+  });
+
+  // ====== Movimiento de deuda ======
+  var DEUDA_HINTS = {
+    preste: "Anota que le prestaste plata: sube lo que te debe.",
+    mePagaron: "Anota que te devolvió plata: baja lo que te debe. No es un gasto ni un ingreso, solo baja el saldo.",
+    debo: "Anota que te prestó plata: sube lo que le debes.",
+    pague: "Anota que le pagaste una deuda: baja lo que le debes y además se registra como gasto en Movimientos (categoría \"Pago deudas\")."
+  };
+  var deudaTipoSeleccionado = "preste";
+
+  function openDeudaSheet(){
+    $("deudaForm").reset();
+    deudaTipoSeleccionado = "preste";
+    document.querySelectorAll('#deudaTipoTabs button').forEach(function(b){ b.classList.toggle("active", b.dataset.tipo==="preste"); });
+    $("deudaTipoHint").textContent = DEUDA_HINTS.preste;
+    $("dFecha").value = new Date().toISOString().slice(0,10);
+    $("deudaBackdrop").classList.add("show");
+    $("deudaSheet").classList.add("show");
+  }
+  function closeDeudaSheet(){
+    $("deudaBackdrop").classList.remove("show");
+    $("deudaSheet").classList.remove("show");
+  }
+  $("addDeudaBtn").onclick = openDeudaSheet;
+  $("closeDeudaSheet").onclick = closeDeudaSheet;
+  $("deudaBackdrop").onclick = closeDeudaSheet;
+  attachMilesInput($("dMonto"));
+
+  document.querySelectorAll('#deudaTipoTabs button').forEach(function(btn){
+    btn.onclick = function(){
+      deudaTipoSeleccionado = btn.dataset.tipo;
+      document.querySelectorAll('#deudaTipoTabs button').forEach(function(b){ b.classList.remove("active"); });
+      btn.classList.add("active");
+      $("deudaTipoHint").textContent = DEUDA_HINTS[deudaTipoSeleccionado];
+    };
+  });
+
+  $("deudaForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var monto = parseMiles($("dMonto").value);
+    if(!monto || monto <= 0){ showToast("Ingresa un monto válido", "err"); return; }
+    var btn = $("deudaSubmitBtn");
+    btn.disabled = true;
+    btn.textContent = "Guardando...";
+    apiPost({
+      accion: "movimientoDeuda",
+      persona: $("dPersona").value,
+      tipo: deudaTipoSeleccionado,
+      monto: monto,
+      fecha: $("dFecha").value,
+      detalle: $("dDetalle").value.trim()
+    }).then(function(json){
+      if(!json.ok) throw new Error(json.error || "Error desconocido");
+      showToast("Movimiento guardado ✓", "ok");
+      closeDeudaSheet();
+      loadDeudas();
+      if(deudaTipoSeleccionado === "pague"){
+        loadListas();
+        loadData(true);
+        if(currentView === "viewHistorial") loadMovimientos();
+      }
+    }).catch(function(err){
+      showToast("Error: " + err.message, "err");
+    }).finally(function(){
+      btn.disabled = false;
+      btn.textContent = "Guardar";
     });
   });
 
