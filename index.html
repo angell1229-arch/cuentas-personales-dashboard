@@ -287,6 +287,13 @@
   .legend-chip .legend-name{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   .legend-chip .legend-pct{font-size:10px;color:var(--text-dim);font-weight:600;}
 
+  .presu-total-display{
+    background:var(--surface-2);border-radius:14px;padding:14px 16px;margin:2px 0 4px;
+    display:flex;flex-direction:column;align-items:center;text-align:center;
+  }
+  .presu-total-display .l{font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;}
+  .presu-total-display .v{font-size:25px;font-weight:800;margin-top:4px;color:var(--accent);}
+
   .presu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;}
   .presu-item{display:flex;flex-direction:column;gap:4px;}
   .presu-item span{font-size:10px;color:var(--text-dim);font-weight:700;text-transform:uppercase;text-align:center;}
@@ -550,13 +557,19 @@
     <button class="close-x" id="closePresupuestoEditSheet">✕</button>
     <h2 id="presupuestoEditTitle">Presupuesto</h2>
 
-    <label>Mismo monto los 12 meses</label>
-    <div class="row2">
-      <input type="number" id="presuMontoParejo" placeholder="0" min="0" step="1">
-      <button type="button" class="ghost-btn" id="presuAplicarParejo" style="margin-top:0;">Aplicar</button>
+    <div class="presu-total-display">
+      <span class="l">Presupuesto anual actual</span>
+      <span class="v" id="presuTotalAnualBig">$0</span>
     </div>
 
-    <label>Distribuir un monto anual por porcentaje</label>
+    <label>Presupuesto anual</label>
+    <div class="presu-hint">Escribe el total del año: se reparte en partes iguales entre los 12 meses.</div>
+    <div class="row2">
+      <input type="number" id="presuMontoAnualDirecto" placeholder="0" min="0" step="1">
+      <button type="button" class="ghost-btn" id="presuAplicarAnualDirecto" style="margin-top:0;">Aplicar</button>
+    </div>
+
+    <label>O distribuir por porcentaje (mes con bono, etc.)</label>
     <div class="presu-hint">Útil si en algún mes tienes bono o ganancia extra: sube el % de ese mes y baja el resto. Deben sumar 100%.</div>
     <input type="number" id="presuMontoAnual" placeholder="Monto anual total" min="0" step="1">
     <div class="presu-grid" id="presuPorcentajes"></div>
@@ -564,7 +577,6 @@
 
     <label>Presupuesto por mes (editable directo)</label>
     <div class="presu-grid" id="presuMeses"></div>
-    <div class="presu-hint" id="presuTotalAnual"></div>
 
     <button type="button" class="submit-btn" id="presuGuardarBtn">Guardar presupuesto</button>
   </div>
@@ -1205,7 +1217,7 @@
     if(!c) return;
     presupuestoState.categoriaActual = categoria;
     $("presupuestoEditTitle").textContent = "Presupuesto · " + categoria;
-    $("presuMontoParejo").value = "";
+    $("presuMontoAnualDirecto").value = c.totalAnual || "";
     $("presuMontoAnual").value = "";
 
     $("presuPorcentajes").innerHTML = MESES.map(function(m, i){
@@ -1235,13 +1247,17 @@
   function updatePresuTotalAnual(){
     var total = 0;
     document.querySelectorAll(".presu-mes").forEach(function(inp){ total += Number(inp.value) || 0; });
-    $("presuTotalAnual").textContent = "Total anual con estos valores: " + money.format(total);
+    $("presuTotalAnualBig").textContent = money.format(total);
   }
 
-  $("presuAplicarParejo").onclick = function(){
-    var monto = Number($("presuMontoParejo").value);
-    if(isNaN(monto) || monto < 0){ showToast("Monto inválido", "err"); return; }
-    document.querySelectorAll(".presu-mes").forEach(function(inp){ inp.value = monto; });
+  $("presuAplicarAnualDirecto").onclick = function(){
+    var total = Number($("presuMontoAnualDirecto").value);
+    if(isNaN(total) || total < 0){ showToast("Monto inválido", "err"); return; }
+    var base = Math.floor(total / 12);
+    var resto = total - base * 12;
+    document.querySelectorAll(".presu-mes").forEach(function(inp, i){
+      inp.value = base + (i < resto ? 1 : 0);
+    });
     updatePresuTotalAnual();
   };
 
