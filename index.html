@@ -277,13 +277,15 @@
   }
   .donut-hole .v{font-size:14px;font-weight:800;line-height:1.2;}
   .donut-hole .l{font-size:9px;color:var(--text-dim);text-transform:uppercase;font-weight:700;margin-top:3px;letter-spacing:.3px;}
-  .legend-row{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--border);}
-  .legend-row:last-child{border-bottom:none;}
-  .legend-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto;}
-  .legend-body{flex:1;min-width:0;display:flex;flex-direction:column;}
-  .legend-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .legend-pct{font-size:11px;color:var(--text-dim);}
-  .legend-amount{font-size:13px;font-weight:700;white-space:nowrap;}
+  .legend-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;padding:4px 0 8px;}
+  .legend-chip{
+    display:flex;align-items:center;gap:6px;padding:7px 9px;border-radius:11px;
+    background:var(--surface-2);min-width:0;
+  }
+  .legend-chip .legend-dot{width:8px;height:8px;border-radius:50%;flex:0 0 auto;}
+  .legend-chip .legend-info{min-width:0;flex:1;display:flex;flex-direction:column;}
+  .legend-chip .legend-name{font-size:11px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .legend-chip .legend-pct{font-size:10px;color:var(--text-dim);font-weight:600;}
 
   .presu-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;}
   .presu-item{display:flex;flex-direction:column;gap:4px;}
@@ -440,7 +442,7 @@
         <div class="donut-wrap">
           <div class="donut" id="presupuestoDonut"><div class="donut-hole" id="presupuestoDonutCenter"></div></div>
         </div>
-        <div id="presupuestoLegend"></div>
+        <div class="legend-grid" id="presupuestoLegend"></div>
       </div>
 
       <div class="section-title">Presupuesto por categoría <span class="tag">toca una para editar</span></div>
@@ -823,11 +825,9 @@
       '<span class="v">'+money.format(total)+'</span><span class="l">Presupuestado</span>';
 
     $("presupuestoLegend").innerHTML = cats.map(function(c){
-      return '<div class="legend-row">' +
+      return '<div class="legend-chip">' +
         '<span class="legend-dot" style="background:'+c.color+'"></span>' +
-        catIcon(c.nombre) +
-        '<div class="legend-body"><span class="legend-name">'+c.nombre+'</span><span class="legend-pct">'+c.pct.toFixed(1)+'%</span></div>' +
-        '<span class="legend-amount">'+money.format(c.valor)+'</span>' +
+        '<div class="legend-info"><span class="legend-name">'+c.nombre+'</span><span class="legend-pct">'+c.pct.toFixed(1)+'%</span></div>' +
         '</div>';
     }).join("");
   }
