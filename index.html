@@ -384,12 +384,7 @@
         <div class="stat-card"><div class="label">Gasto</div><div class="value skeleton" style="height:20px;width:70%">&nbsp;</div></div>
       </div>
 
-      <div class="section-title">Categorías
-        <span style="display:flex;gap:14px;">
-          <button class="link-btn" id="editPresupuestoBtn">Presupuesto</button>
-          <button class="link-btn" id="addCatBtn">+ Nueva categoría</button>
-        </span>
-      </div>
+      <div class="section-title">Categorías <button class="link-btn" id="addCatBtn">+ Nueva categoría</button></div>
       <div class="cat-columns">
         <div class="card">
           <div class="cat-group-title">Gastos fijos</div>
@@ -421,6 +416,11 @@
       <div class="card" id="compartidosDetalle"></div>
     </div>
 
+    <div class="view" id="viewPresupuesto">
+      <div class="section-title">Presupuesto por categoría <span class="tag">toca una para editar</span></div>
+      <div class="card" style="padding:6px 16px;" id="presupuestoLista"></div>
+    </div>
+
   </main>
 
   <nav class="bottom">
@@ -436,6 +436,10 @@
     <button data-view="viewHistorial" id="navHistorial">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-7"/></svg>
       Historial
+    </button>
+    <button data-view="viewPresupuesto" id="navPresupuesto">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
+      Presupuesto
     </button>
   </nav>
 
@@ -510,14 +514,6 @@
 
       <button type="submit" class="submit-btn" id="catSubmitBtn">Crear categoría</button>
     </form>
-  </div>
-
-  <div class="backdrop" id="presupuestoBackdrop"></div>
-  <div class="sheet" id="presupuestoSheet">
-    <div class="sheet-handle"></div>
-    <button class="close-x" id="closePresupuestoSheet">✕</button>
-    <h2>Presupuesto por categoría</h2>
-    <div class="card" style="padding:6px 16px;" id="presupuestoLista"></div>
   </div>
 
   <div class="backdrop" id="presupuestoEditBackdrop"></div>
@@ -876,10 +872,12 @@
     document.querySelector('[data-view="'+view+'"]').classList.add("active");
     if(view === "viewHistorial") loadMovimientos();
     if(view === "viewCompartidos") renderCompartidos();
+    if(view === "viewPresupuesto") loadPresupuesto();
   }
   $("navResumen").onclick = function(){ switchView("viewResumen"); };
   $("navHistorial").onclick = function(){ switchView("viewHistorial"); };
   $("navCompartidos").onclick = function(){ switchView("viewCompartidos"); };
+  $("navPresupuesto").onclick = function(){ switchView("viewPresupuesto"); };
 
   // ====== Sheet / formulario de movimiento ======
   var currentType = "GASTO";
@@ -1087,18 +1085,6 @@
 
   // ====== Presupuesto por categoría (editable por mes) ======
   var presupuestoState = { categorias: [], categoriaActual: null };
-
-  $("editPresupuestoBtn").onclick = function(){
-    loadPresupuesto();
-    $("presupuestoBackdrop").classList.add("show");
-    $("presupuestoSheet").classList.add("show");
-  };
-  $("closePresupuestoSheet").onclick = closePresupuestoSheet;
-  $("presupuestoBackdrop").onclick = closePresupuestoSheet;
-  function closePresupuestoSheet(){
-    $("presupuestoBackdrop").classList.remove("show");
-    $("presupuestoSheet").classList.remove("show");
-  }
 
   function loadPresupuesto(){
     $("presupuestoLista").innerHTML = '<div class="empty-note">Cargando…</div>';
