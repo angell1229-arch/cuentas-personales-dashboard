@@ -17,38 +17,51 @@
 <meta name="apple-mobile-web-app-title" content="Cuentas">
 <style>
   :root{
-    --bg:#eef3f4;
+    --bg:#f4f7f8;
     --surface:#ffffff;
-    --surface-2:#e8f0f1;
-    --text:#132226;
-    --text-dim:#5c6f74;
+    --surface-2:#edf3f4;
+    --text:#0f1e22;
+    /* #5f7378 da 5:1 sobre blanco; el gris anterior (#6b7f84) quedaba en 4,2:1,
+       bajo el mínimo AA de 4,5:1 y se usa en texto chico (11-12px). */
+    --text-dim:#5f7378;
     --accent:#0d6e7d;
     --accent-2:#0a4954;
-    --mint:#1fb894;
-    --green:#1fb894;
-    --red:#e0503f;
-    --amber:#e08e2e;
-    --border:#dbe6e8;
-    --shadow:0 4px 20px rgba(10,40,45,0.07);
-    --radius:18px;
+    --accent-soft:#e7f3f4;
+    /* Verde y ámbar se usan también en texto chico (montos de 14-15px), así que
+       van en el tono que pasa 4,5:1 sobre blanco, no en el brillante de barra:
+       #0e9f6e daba 3,4:1 y #d97706 daba 3,2:1. */
+    --mint:#067a53;
+    --green:#067a53;
+    --green-soft:#e4f5ee;
+    --red:#dc2626;
+    --red-soft:#fdecea;
+    --amber:#b45309;
+    --amber-soft:#fef3e2;
+    --border:#e6edef;
+    --shadow:0 2px 14px rgba(13,45,50,0.06);
+    --radius:22px;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
     font-synthesis: none;
   }
   @media (prefers-color-scheme: dark){
     :root{
-      --bg:#0c1517;
-      --surface:#131e21;
-      --surface-2:#182427;
+      --bg:#0b1416;
+      --surface:#111d20;
+      --surface-2:#18262a;
       --text:#eaf3f4;
-      --text-dim:#8ea4a8;
+      --text-dim:#8ca3a8;
       --accent:#2bb8c9;
-      --accent-2:#0d6e7d;
+      --accent-2:#1a8a99;
+      --accent-soft:#123034;
       --mint:#3fe0bb;
       --green:#3fe0bb;
+      --green-soft:#0f2f29;
       --red:#ff7b6b;
+      --red-soft:#33191a;
       --amber:#ffc069;
-      --border:#213033;
-      --shadow:0 4px 24px rgba(0,0,0,0.4);
+      --amber-soft:#332618;
+      --border:#1f2e32;
+      --shadow:0 2px 16px rgba(0,0,0,0.35);
     }
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
@@ -69,49 +82,68 @@
     background:var(--bg);
   }
 
+  /* Chip de ícono: el color comunica cómo va vs. su presupuesto */
   .cat-ico{
     display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;
-    width:26px;height:26px;border-radius:9px;margin-right:9px;
-    background:var(--surface-2);color:var(--accent);
+    width:40px;height:40px;border-radius:13px;
+    background:var(--accent-soft);color:var(--accent);
   }
-  .cat-ico svg{width:15px;height:15px;}
-  .cat-ico.lg{width:38px;height:38px;border-radius:12px;}
-  .cat-ico.lg svg{width:20px;height:20px;}
+  .cat-ico svg{width:20px;height:20px;}
+  .cat-ico.ok{background:var(--green-soft);color:var(--green);}
+  .cat-ico.warn{background:var(--amber-soft);color:var(--amber);}
+  .cat-ico.over{background:var(--red-soft);color:var(--red);}
+  .cat-ico.sm{width:34px;height:34px;border-radius:11px;}
+  .cat-ico.sm svg{width:17px;height:17px;}
 
-  /* ---------- Header ---------- */
+  /* ---------- Header claro ---------- */
   header{
     position:sticky;top:0;z-index:20;
-    background:linear-gradient(160deg,var(--accent),var(--accent-2));
-    color:#fff;
-    padding:18px 18px 22px;
-    border-radius:0 0 26px 26px;
-    box-shadow:0 8px 24px rgba(10,80,90,0.25);
+    background:var(--bg);
+    color:var(--text);
+    padding:calc(14px + env(safe-area-inset-top,0px)) 16px 10px;
   }
-  .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
-  .app-name{font-size:15px;font-weight:600;opacity:0.9;letter-spacing:.3px;}
+  .header-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:10px;}
+  .app-name{font-size:26px;font-weight:800;letter-spacing:-.7px;}
   .icon-btn{
-    background:rgba(255,255,255,0.18);border:none;color:#fff;
-    width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-    cursor:pointer;
+    background:var(--surface);border:1px solid var(--border);color:var(--text-dim);
+    width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;flex:0 0 auto;
+  }
+  .icon-btn:active{background:var(--surface-2);}
+
+  /* Los botones chicos del header (36px y 30px) se ven mejor compactos, pero
+     tocar 30px en el celular falla. Se les extiende el área táctil a 44x44 con
+     un pseudo-elemento invisible, sin cambiar cómo se ven. */
+  .icon-btn, .period-nav > button, .period-switch button{position:relative;}
+  .icon-btn::after, .period-nav > button::after, .period-switch button::after{
+    content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:44px;height:44px;
   }
   .refresh-btn.spinning svg{animation:spin .8s linear infinite;}
   @keyframes spin{to{transform:rotate(360deg);}}
 
+  /* Período: una sola fila compacta (‹ mes › + Mes/Año) */
+  .period-nav{
+    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:6px 8px;
+  }
+  .period-nav > button{
+    background:var(--surface-2);border:none;color:var(--accent);
+    width:30px;height:30px;border-radius:10px;flex:0 0 auto;
+    font-size:16px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  }
+  .period-label{
+    font-size:15px;font-weight:800;text-transform:capitalize;letter-spacing:-.2px;
+    flex:1;min-width:0;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
   .period-switch{
-    display:flex;background:rgba(255,255,255,0.15);border-radius:14px;padding:3px;margin-bottom:14px;
+    display:flex;background:var(--surface-2);border-radius:11px;padding:3px;flex:0 0 auto;
   }
   .period-switch button{
-    flex:1;border:none;background:transparent;color:rgba(255,255,255,0.75);
-    padding:8px 0;border-radius:11px;font-size:13px;font-weight:600;cursor:pointer;
+    border:none;background:transparent;color:var(--text-dim);font-family:inherit;
+    padding:5px 11px;border-radius:9px;font-size:11.5px;font-weight:700;cursor:pointer;
   }
-  .period-switch button.active{background:#fff;color:var(--accent-2);}
-
-  .period-nav{display:flex;align-items:center;justify-content:space-between;}
-  .period-nav button{
-    background:rgba(255,255,255,0.18);border:none;color:#fff;width:32px;height:32px;border-radius:50%;
-    font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  }
-  .period-label{font-size:20px;font-weight:700;text-transform:capitalize;}
+  .period-switch button.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 4px rgba(13,45,50,.10);}
 
   /* ---------- Tabs (Resumen / Historial) ---------- */
   .view-tabs{display:none;}
@@ -120,23 +152,56 @@
 
   /* ---------- Cards ---------- */
   /* El extra abajo deja aire para la barra de navegación y el FAB flotante. */
-  main{flex:1;padding:16px 16px calc(140px + var(--safe-bottom));}
+  main{flex:1;padding:6px 16px calc(150px + var(--safe-bottom));}
 
+  /* Tarjeta hero con anillo de progreso */
+  .hero-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:18px 18px 16px;margin-bottom:16px;
+  }
+  .hero-head{display:flex;align-items:center;justify-content:space-between;gap:10px;}
+  .hero-title{font-size:15px;font-weight:800;letter-spacing:-.2px;}
+  .hero-badge{
+    font-size:11px;font-weight:800;color:var(--accent);background:var(--accent-soft);
+    padding:4px 9px;border-radius:20px;white-space:nowrap;
+  }
+  .hero-badge.over{color:var(--red);background:var(--red-soft);}
+  .hero-badge.warn{color:var(--amber);background:var(--amber-soft);}
+  .ring-wrap{display:flex;justify-content:center;padding:8px 0 2px;}
+  .ring{position:relative;width:172px;height:172px;}
+  .ring svg{transform:rotate(-90deg);display:block;}
+  .ring-fill{transition:stroke-dashoffset .6s ease;}
+  .ring-mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .ring-pct{font-size:37px;font-weight:800;letter-spacing:-1.6px;line-height:1;color:var(--accent);}
+  .ring-pct.sm{font-size:21px;letter-spacing:-.7px;}
+  .ring-lbl{font-size:11.5px;color:var(--text-dim);font-weight:600;margin-top:4px;}
+
+  .tri{display:flex;margin-top:14px;padding-top:15px;border-top:1px solid var(--border);}
+  .tri > div{flex:1;text-align:center;position:relative;min-width:0;padding:0 3px;}
+  .tri > div + div::before{content:"";position:absolute;left:0;top:3px;bottom:3px;width:1px;background:var(--border);}
+  .tri .v{font-size:14.5px;font-weight:800;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .tri .v.pos{color:var(--green);} .tri .v.neg{color:var(--red);} .tri .v.acc{color:var(--accent);}
+  .tri .l{font-size:10.5px;color:var(--text-dim);font-weight:600;margin-top:3px;}
+
+  /* Mini tarjetas 2x2 */
   .stat-scroll{
-    display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:0 0 16px;
+    display:grid;grid-template-columns:repeat(2,1fr);gap:11px;margin:0 0 16px;
   }
   .stat-card{
-    background:var(--surface);border-radius:var(--radius);
-    padding:14px;box-shadow:var(--shadow);min-width:0;
+    background:var(--surface);border:1px solid var(--border);border-radius:18px;
+    padding:13px 14px;box-shadow:var(--shadow);min-width:0;
   }
-  .stat-card .label{font-size:11.5px;color:var(--text-dim);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
-  .stat-card .value{font-size:17px;font-weight:800;margin-top:6px;letter-spacing:-.2px;}
+  .stat-card .label{
+    font-size:10.5px;color:var(--text-dim);font-weight:700;text-transform:uppercase;letter-spacing:.4px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  }
+  .stat-card .value{font-size:18px;font-weight:800;margin-top:6px;letter-spacing:-.5px;}
   .stat-card .value.pos{color:var(--green);}
   .stat-card .value.neg{color:var(--red);}
 
   .section-title{
-    font-size:13px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;
-    margin:22px 4px 10px;display:flex;justify-content:space-between;align-items:center;
+    font-size:16px;font-weight:800;color:var(--text);text-transform:none;letter-spacing:-.3px;
+    margin:20px 2px 11px;display:flex;justify-content:space-between;align-items:center;gap:10px;
   }
   .filter-row{display:flex;gap:8px;margin-bottom:12px;}
   .filter-row select{
@@ -144,45 +209,45 @@
     background:var(--surface);color:var(--text);font-size:12.5px;font-weight:600;font-family:inherit;
   }
   .section-title span.tag{
-    background:var(--surface-2);color:var(--text-dim);font-size:11px;font-weight:700;
-    padding:3px 9px;border-radius:20px;text-transform:none;
+    background:var(--surface-2);color:var(--text-dim);font-size:10.5px;font-weight:700;
+    padding:3px 9px;border-radius:20px;text-transform:none;letter-spacing:0;flex:0 0 auto;
   }
   .section-title .link-btn{
-    background:none;border:none;color:var(--accent);font-size:12px;font-weight:700;cursor:pointer;
-    text-transform:none;letter-spacing:0;
+    background:none;border:none;color:var(--accent);font-size:12.5px;font-weight:700;cursor:pointer;
+    text-transform:none;letter-spacing:0;font-family:inherit;flex:0 0 auto;
   }
 
-  .card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);padding:6px 16px;}
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:4px 16px;
+  }
 
   .cat-group-title{
     font-size:11.5px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.5px;
-    padding:12px 2px 6px;
+    padding:13px 2px 4px;
   }
 
-  .cat-row{
-    padding:12px 0;border-bottom:1px solid var(--border);display:flex;gap:0;align-items:flex-start;
-  }
+  /* Fila de categoría: chip de color + monto/de-cuánto + barra + pie */
+  .cat-row{padding:14px 0;border-bottom:1px solid var(--border);}
   .cat-row:last-child{border-bottom:none;}
+  .cat-row-top{display:flex;align-items:center;gap:11px;}
   .cat-row-body{flex:1;min-width:0;}
   .cat-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
-  .cat-name{font-size:14px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .cat-amount{font-size:14px;font-weight:700;white-space:nowrap;}
-  .cat-sub{font-size:11.5px;color:var(--text-dim);margin-top:5px;}
-  .bar-track{height:7px;border-radius:6px;background:var(--surface-2);overflow:hidden;margin-top:7px;}
-  .bar-fill{height:100%;border-radius:6px;background:var(--accent);transition:width .4s ease;}
+  .cat-name{font-size:14.5px;font-weight:700;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .cat-amount{font-size:15px;font-weight:800;white-space:nowrap;letter-spacing:-.3px;}
+  .cat-of{font-size:11px;color:var(--text-dim);font-weight:600;white-space:nowrap;text-align:right;margin-top:2px;}
+  .cat-sub{font-size:11.5px;color:var(--text-dim);margin-top:3px;font-weight:500;}
+  .bar-track{height:7px;border-radius:6px;background:var(--surface-2);overflow:hidden;margin-top:11px;}
+  .bar-fill{height:100%;border-radius:6px;background:var(--green);transition:width .5s ease;}
   .bar-fill.over{background:var(--red);}
   .bar-fill.warn{background:var(--amber);}
+  .cat-foot{
+    display:flex;justify-content:space-between;gap:8px;margin-top:7px;
+    font-size:11.5px;color:var(--text-dim);font-weight:600;
+  }
+  .cat-foot .over{color:var(--red);font-weight:700;}
 
   .empty-note{color:var(--text-dim);font-size:13px;text-align:center;padding:18px 8px;}
-
-  .compartidos-grid{display:flex;gap:10px;padding:14px 0;}
-  .compartidos-grid .mini{flex:1;text-align:center;}
-  .compartidos-grid .mini .v{font-size:16px;font-weight:800;}
-  .compartidos-grid .mini .l{font-size:10.5px;color:var(--text-dim);margin-top:2px;}
-  .compartidos-grid .mini .v.pos{color:var(--green);}
-  .compartidos-grid .mini .v.neg{color:var(--red);}
-  .compartidos-grid .mini{cursor:pointer;border-radius:10px;padding:6px 2px;transition:background .15s ease;}
-  .compartidos-grid .mini.active{background:var(--surface-2);}
 
   .skeleton{
     background:linear-gradient(90deg,var(--surface-2) 25%,var(--border) 37%,var(--surface-2) 63%);
@@ -192,17 +257,18 @@
 
   /* ---------- Historial ---------- */
   .mov-row{
-    padding:11px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:2px;
+    padding:13px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:11px;
     cursor:pointer;
   }
   .mov-row:last-child{border-bottom:none;}
   .mov-body{flex:1;min-width:0;}
-  .mov-top{display:flex;justify-content:space-between;gap:8px;}
-  .mov-name{font-size:14px;font-weight:600;}
-  .mov-amount{font-size:14px;font-weight:700;white-space:nowrap;}
-  .mov-sub{font-size:11.5px;color:var(--text-dim);margin-top:2px;display:flex;gap:6px;flex-wrap:wrap;}
-  .mov-sub .pill{background:var(--surface-2);padding:1px 7px;border-radius:20px;}
-  .edit-chevron{color:var(--text-dim);font-size:16px;margin-left:6px;}
+  .mov-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline;}
+  .mov-name{font-size:14px;font-weight:700;letter-spacing:-.2px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .mov-amount{font-size:14.5px;font-weight:800;white-space:nowrap;letter-spacing:-.3px;}
+  .mov-sub{font-size:11.5px;color:var(--text-dim);margin-top:4px;display:flex;gap:6px;flex-wrap:wrap;font-weight:600;}
+  .mov-sub .pill{background:var(--surface-2);padding:2px 8px;border-radius:20px;}
+  .edit-chevron{color:var(--text-dim);font-size:15px;flex:0 0 auto;}
 
   /* ---------- Bottom nav ---------- */
   nav.bottom{
@@ -214,20 +280,57 @@
   }
   nav.bottom button{
     background:none;border:none;color:var(--text-dim);display:flex;flex-direction:column;
-    align-items:center;gap:3px;font-size:9.5px;font-weight:600;cursor:pointer;padding:4px 3px;
-    flex:1;min-width:0;
+    align-items:center;gap:4px;font-size:9.5px;font-weight:700;cursor:pointer;padding:0;
+    flex:1;min-width:0;font-family:inherit;
+  }
+  nav.bottom button .nav-pill{
+    display:flex;align-items:center;justify-content:center;
+    padding:5px 14px;border-radius:14px;transition:background .18s ease;
   }
   nav.bottom button.active{color:var(--accent);}
-  /* FAB flotante sobre la barra: así cabe una pestaña más sin apretar el nav. */
-  .fab{
-    position:fixed;right:16px;bottom:calc(74px + var(--safe-bottom));z-index:31;
-    width:56px;height:56px;border-radius:50%;
-    background:linear-gradient(160deg,var(--accent),var(--accent-2));
-    color:#fff;border:none;font-size:28px;line-height:1;
-    display:flex;align-items:center;justify-content:center;
-    box-shadow:0 8px 18px rgba(10,80,90,0.45);
-    cursor:pointer;flex:none;
+  nav.bottom button.active .nav-pill{background:var(--accent-soft);}
+  /* FAB: píldora con texto, dice qué hace y tapa menos la lista.
+     Va como `nav.bottom .fab` porque `nav.bottom button` le gana en
+     especificidad y le pisaba el padding y el tamaño de fuente. */
+  nav.bottom .fab{
+    position:fixed;right:16px;bottom:calc(78px + var(--safe-bottom));z-index:31;
+    border-radius:26px;padding:13px 19px;
+    background:linear-gradient(135deg,var(--accent),var(--accent-2));
+    color:#fff;border:none;font-size:14px;font-weight:700;font-family:inherit;line-height:1;
+    display:flex;flex-direction:row;align-items:center;gap:7px;
+    box-shadow:0 8px 22px rgba(13,110,125,0.38);
+    cursor:pointer;flex:none;width:auto;min-height:46px;
   }
+  nav.bottom .fab svg{width:17px;height:17px;flex:0 0 auto;}
+  nav.bottom .fab:active{transform:scale(.97);}
+
+  /* Tarjetas de persona (deudas) */
+  .people-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:14px;}
+  .person-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:18px;box-shadow:var(--shadow);
+    padding:13px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0;
+    transition:border-color .15s ease;
+  }
+  .person-card.active{border-color:var(--accent);}
+  .person-avatar{
+    width:34px;height:34px;border-radius:11px;background:var(--surface-2);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex:0 0 auto;
+  }
+  .person-card .pv{font-size:14.5px;font-weight:800;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .person-card .pv.pos{color:var(--green);} .person-card .pv.neg{color:var(--red);}
+  .person-card .pl{font-size:10.5px;color:var(--text-dim);font-weight:600;margin-top:1px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .person-body{min-width:0;}
+
+  /* Tarjeta de balance destacada */
+  .balance-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    box-shadow:var(--shadow);padding:16px 18px;margin-bottom:14px;
+  }
+  .balance-card .who{font-size:12px;color:var(--text-dim);font-weight:700;}
+  .balance-card .amt{font-size:26px;font-weight:800;letter-spacing:-1px;margin-top:5px;line-height:1.15;}
+  .balance-card .amt.pos{color:var(--green);} .balance-card .amt.neg{color:var(--red);}
+  .balance-card .note{font-size:12.5px;color:var(--text-dim);margin-top:7px;line-height:1.5;}
 
   /* ---------- Sheet / Modal ---------- */
   .backdrop{
@@ -290,7 +393,7 @@
   .budget-bar-save:disabled{opacity:.6;}
 
   .share-btn{
-    width:100%;margin:2px 0 4px;padding:13px;border:none;border-radius:14px;
+    width:100%;margin:0 0 16px;padding:13px;border:none;border-radius:14px;
     background:linear-gradient(160deg,var(--accent),var(--accent-2));color:#fff;
     font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;
     display:flex;align-items:center;justify-content:center;gap:8px;
@@ -365,34 +468,38 @@
       column-gap:24px;padding:24px 24px 24px 0;
     }
     header{
-      grid-column:1 / -1;grid-row:1;border-radius:22px;padding:22px 28px;
+      grid-column:1 / -1;grid-row:1;padding:22px 4px 14px;
       display:flex;align-items:center;justify-content:space-between;gap:24px;
+      background:var(--bg);
     }
-    .header-top{margin-bottom:0;}
-    .period-switch{margin-bottom:0;width:200px;}
-    .period-nav{gap:14px;}
+    .header-top{margin-bottom:0;flex:0 0 auto;}
+    .app-name{font-size:30px;}
+    .period-nav{flex:0 0 auto;min-width:360px;}
 
     nav.bottom{
       position:static;grid-column:1;grid-row:2;max-width:none;flex-direction:column;
-      align-items:stretch;justify-content:flex-start;gap:10px;background:transparent;border:none;
+      align-items:stretch;justify-content:flex-start;gap:8px;background:transparent;border:none;
       padding:20px 0 0;height:fit-content;
     }
     nav.bottom button{
-      flex-direction:row;justify-content:flex-start;gap:12px;font-size:14px;padding:12px 16px;
-      border-radius:14px;background:var(--surface);box-shadow:var(--shadow);
+      flex-direction:row;justify-content:flex-start;gap:12px;padding:12px 16px;
+      border-radius:14px;background:var(--surface);border:1px solid var(--border);
+      box-shadow:var(--shadow);flex:none;font-size:13.5px;
     }
-    nav.bottom button.active{background:var(--accent);color:#fff;}
-    .fab{
-      position:static;order:-1;margin-top:0;width:100%;height:48px;border-radius:14px;font-size:20px;
-      flex-direction:row;gap:8px;
+    nav.bottom button .nav-pill{padding:0;background:none;border-radius:0;}
+    nav.bottom button.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+    nav.bottom button.active .nav-pill{background:none;}
+    nav.bottom .fab{
+      position:static;order:-1;margin:0 0 4px;width:100%;height:48px;border-radius:14px;
+      justify-content:center;font-size:14px;
     }
-    nav.bottom button{font-size:14px;flex:none;}
-    .fab::after{content:"Nuevo movimiento";font-size:13.5px;font-weight:700;}
 
-    main{grid-column:2;grid-row:2;padding:20px 0 40px;}
+    main{grid-column:2;grid-row:2;padding:14px 0 40px;}
     .stat-scroll{
       grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:0 0 20px;
     }
+    .hero-card{max-width:520px;}
+    .people-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));}
 
     .resumen-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;align-items:start;}
     .cat-columns{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
@@ -412,7 +519,7 @@
   <header>
     <div>
       <div class="header-top">
-        <span class="app-name">💰 Cuentas Personales</span>
+        <span class="app-name" id="viewTitle">Resumen</span>
         <div style="display:flex;gap:8px;">
           <button class="icon-btn" id="settingsBtn" title="Configuración">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
@@ -423,20 +530,21 @@
         </div>
       </div>
     </div>
-    <div class="period-switch">
-      <button id="btnMensual" class="active">Mensual</button>
-      <button id="btnAnual">Anual</button>
-    </div>
     <div class="period-nav">
-      <button id="prevBtn">‹</button>
+      <button id="prevBtn" aria-label="Período anterior">‹</button>
       <div class="period-label" id="periodLabel">—</div>
-      <button id="nextBtn">›</button>
+      <div class="period-switch">
+        <button id="btnMensual" class="active">Mes</button>
+        <button id="btnAnual">Año</button>
+      </div>
+      <button id="nextBtn" aria-label="Período siguiente">›</button>
     </div>
   </header>
 
   <main id="main">
 
     <div class="view active" id="viewResumen">
+      <div id="resumenHero"></div>
       <div class="stat-scroll" id="statScroll">
         <div class="stat-card"><div class="label">Gasto</div><div class="value skeleton" style="height:20px;width:70%">&nbsp;</div></div>
       </div>
@@ -467,28 +575,31 @@
     </div>
 
     <div class="view" id="viewCompartidos">
-      <div class="stat-scroll" id="compartidosStats"></div>
-      <div class="card" style="margin-bottom:6px;padding:14px 16px;" id="balanceNote"></div>
+      <div id="balanceNote"></div>
       <button type="button" class="share-btn" id="compartirBtn">
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4"/><path d="M15.4 6.5l-6.8 4"/></svg>
         Enviar resumen a Pablo
       </button>
+      <div class="stat-scroll" id="compartidosStats"></div>
+
       <div class="section-title">Detalle por categoría <span class="tag">50/50 con Pablo</span></div>
       <div class="card" id="compartidosDetalle"></div>
 
       <div class="section-title">Deudas personales <button class="link-btn" id="addDeudaBtn">+ Movimiento</button></div>
-      <div class="compartidos-grid" id="deudasGrid"></div>
+      <div class="people-grid" id="deudasGrid"></div>
       <div class="card" id="deudasList"></div>
     </div>
 
     <div class="view" id="viewPresupuesto">
+      <div id="presupuestoHero"></div>
       <div class="stat-scroll" id="presupuestoStats"></div>
 
       <div class="section-title">Presupuesto por categoría <span class="tag">mayor a menor</span></div>
-      <div class="card" style="padding:6px 16px;" id="presupuestoBars"></div>
+      <div class="card" style="padding:4px 16px;" id="presupuestoBars"></div>
     </div>
 
     <div class="view" id="viewAhorro">
+      <div id="ahorroHero"></div>
       <div class="stat-scroll" id="ahorroStats"></div>
       <div class="kpi-note" id="ahorroNote"></div>
 
@@ -496,35 +607,38 @@
       <div class="card" style="padding:10px 16px;" id="ahorroMeses"></div>
 
       <div class="section-title">Ahorro por año <span class="tag" id="ahorroAcumuladoTag"></span></div>
-      <div class="card" style="padding:6px 16px;" id="ahorroPorAnio"></div>
+      <div class="card" style="padding:4px 16px;" id="ahorroPorAnio"></div>
 
       <div class="section-title">Ganancias extra por año</div>
-      <div class="card" style="padding:6px 16px;" id="gananciasPorAnio"></div>
+      <div class="card" style="padding:4px 16px;" id="gananciasPorAnio"></div>
     </div>
 
   </main>
 
   <nav class="bottom">
     <button class="active" data-view="viewResumen" id="navResumen">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg>
-      Resumen
+      <span class="nav-pill"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12l9-9 9 9"/><path d="M5 10v10h14V10"/></svg></span>
+      <span class="nav-label">Resumen</span>
     </button>
     <button data-view="viewCompartidos" id="navCompartidos">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 19a6.5 6.5 0 0 1 13 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6"/><path d="M18 13.5a6.5 6.5 0 0 1 3.5 5.5"/></svg>
-      Compartidos
+      <span class="nav-pill"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 19a6.5 6.5 0 0 1 13 0"/><path d="M16 5.2a3.2 3.2 0 0 1 0 5.6"/><path d="M18 13.5a6.5 6.5 0 0 1 3.5 5.5"/></svg></span>
+      <span class="nav-label">Compartidos</span>
     </button>
-    <button class="fab" id="openSheetBtn">+</button>
+    <button class="fab" id="openSheetBtn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Nuevo
+    </button>
     <button data-view="viewHistorial" id="navHistorial">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-7"/></svg>
-      Historial
+      <span class="nav-pill"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 5-7"/></svg></span>
+      <span class="nav-label">Historial</span>
     </button>
     <button data-view="viewPresupuesto" id="navPresupuesto">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg>
-      Presupuesto
+      <span class="nav-pill"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1" fill="currentColor"/></svg></span>
+      <span class="nav-label">Presupuesto</span>
     </button>
     <button data-view="viewAhorro" id="navAhorro">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/></svg>
-      Ahorro
+      <span class="nav-pill"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20h4v-2h3v2h4v-4c1-.5 1.7-1 2-2h2v-4h-2c0-1-.5-1.5-1-2V5z"/><path d="M2 9v1c0 1.1.9 2 2 2h1"/></svg></span>
+      <span class="nav-label">Ahorro</span>
     </button>
   </nav>
 
@@ -816,12 +930,32 @@
     var visibles = categoriasGasto(d);
     var presupuestoTotal = sumaCampo(visibles, "presupuestoAnual", "presupuestoMensual", anual);
 
+    var hayPresupuesto = presupuestoTotal > 0;
+    var pctGasto = pctSeguro(gasto, presupuestoTotal);
+    var restante = presupuestoTotal - gasto;
+    var estGasto = estadoPct(pctGasto, hayPresupuesto);
+
+    $("resumenHero").innerHTML = ringCard({
+      titulo: "Gasto " + sufijoPeriodo(),
+      pct: hayPresupuesto ? pctGasto : (gasto > 0 ? 100 : 0),
+      color: colorEstado(estGasto),
+      badge: hayPresupuesto ? pctGasto.toFixed(0) + "% usado" : "Sin presupuesto",
+      badgeCls: estGasto === "over" ? "over" : (estGasto === "warn" ? "warn" : ""),
+      big: hayPresupuesto ? pctGasto.toFixed(0) + "%" : money.format(gasto),
+      bigSmall: !hayPresupuesto,
+      small: hayPresupuesto ? "del presupuesto" : "gastado",
+      tri: [
+        { v: money.format(presupuestoTotal), l: "Presupuesto", cls: "acc" },
+        { v: money.format(gasto), l: "Gastado" },
+        { v: money.format(Math.abs(restante)), l: restante >= 0 ? "Te queda" : "Te pasaste",
+          cls: restante >= 0 ? "pos" : "neg" }
+      ]
+    });
+
     $("statScroll").innerHTML =
-      statCard("Gasto " + sufijoPeriodo(), money.format(gasto)) +
-      statCard("Presupuesto", money.format(presupuestoTotal)) +
       statCard("Sueldo", money.format(sueldo)) +
       statCard("Ganancias", money.format(ganancias), ganancias > 0 ? "pos" : "") +
-      statCard("Ahorro", money.format(ahorro)) +
+      statCard("Ahorro", money.format(ahorro), ahorro > 0 ? "pos" : "") +
       statCard("Disponible", money.format(diferencia), diferencia >= 0 ? "pos" : "neg");
 
     renderCompartidos();
@@ -840,11 +974,11 @@
     if(compraCasa){
       var valorCasa = anual ? compraCasa.totalAnual : compraCasa.valorMes;
       $("compraCasaCard").innerHTML =
-        '<div class="cat-row">' + catIcon(compraCasa.nombre) +
+        '<div class="cat-row"><div class="cat-row-top">' + catIcon(compraCasa.nombre) +
         '<div class="cat-row-body">' +
-        '<div class="cat-top"><span class="cat-name">Compra de casa · '+(anual?"año "+state.year:MESES_LABEL[state.monthIdx])+'</span><span class="cat-amount">'+money.format(valorCasa)+'</span></div>' +
+        '<div class="cat-top"><span class="cat-name">'+(anual?"Año "+state.year:MESES_LABEL[state.monthIdx])+'</span><span class="cat-amount">'+money.format(valorCasa)+'</span></div>' +
         '<div class="cat-sub">No se incluye en el gasto ni en el disponible del Resumen.</div>' +
-        '</div></div>';
+        '</div></div></div>';
     } else {
       $("compraCasaCard").innerHTML = '<div class="empty-note">Sin datos.</div>';
     }
@@ -853,16 +987,35 @@
   function catRow(c, anual){
     var valor = anual ? c.totalAnual : c.valorMes;
     var presupuesto = anual ? c.presupuestoAnual : c.presupuestoMensual;
-    var pct = presupuesto > 0 ? Math.min(100, (valor/presupuesto)*100) : (valor>0?100:0);
-    var barClass = presupuesto === 0 ? "" : (valor > presupuesto ? "over" : (pct > 80 ? "warn" : ""));
-    return '<div class="cat-row">' + catIcon(c.nombre) +
-      '<div class="cat-row-body">' +
-      '<div class="cat-top"><span class="cat-name">'+c.nombre+'</span><span class="cat-amount">'+money.format(valor)+'</span></div>' +
-      (presupuesto > 0 ?
-        '<div class="bar-track"><div class="bar-fill '+barClass+'" style="width:'+pct+'%"></div></div>' +
-        '<div class="cat-sub">Presupuesto: '+money.format(presupuesto)+'</div>'
-        : '<div class="cat-sub">Sin presupuesto asignado</div>') +
-      '</div></div>';
+    var hayPres = presupuesto > 0;
+    var pctReal = hayPres ? (valor/presupuesto)*100 : 0;
+    var pctBarra = hayPres ? Math.min(100, pctReal) : (valor > 0 ? 100 : 0);
+    var estado = estadoPct(pctReal, hayPres);
+    var restante = presupuesto - valor;
+
+    return '<div class="cat-row">' +
+      '<div class="cat-row-top">' + catIcon(c.nombre, estado) +
+        '<div class="cat-row-body">' +
+          '<div class="cat-top"><span class="cat-name">'+c.nombre+'</span>' +
+          '<span class="cat-amount">'+money.format(valor)+'</span></div>' +
+          (hayPres
+            ? '<div class="cat-top"><span class="cat-sub">'+(c.tipo === "FIJO" ? "Gasto fijo" : "Gasto variable")+'</span>' +
+              '<span class="cat-of">de '+money.format(presupuesto)+'</span></div>'
+            : '<div class="cat-sub">Sin presupuesto asignado</div>') +
+        '</div>' +
+      '</div>' +
+      (hayPres
+        ? '<div class="bar-track"><div class="bar-fill '+estado+'" style="width:'+pctBarra+'%"></div></div>' +
+          '<div class="cat-foot">' +
+            (restante > 0
+              ? '<span>Te queda '+money.format(restante)+'</span>'
+              : (restante === 0
+                  ? '<span>Justo en el presupuesto</span>'
+                  : '<span class="over">Te pasaste '+money.format(-restante)+'</span>')) +
+            '<span>'+pctReal.toFixed(0)+'%</span>' +
+          '</div>'
+        : '') +
+    '</div>';
   }
 
   function renderCompartidos(){
@@ -877,26 +1030,33 @@
     var balanceLabel = balance >= 0 ? "Pablo te debe" : "Le debes a Pablo";
     var balanceCls = balance >= 0 ? "pos" : "neg";
 
-    $("compartidosStats").innerHTML =
-      statCard("Total casa " + (anual?"anual":"del mes"), money.format(ct)) +
-      statCard("Tu mitad", money.format(ce)) +
-      statCard("Pagado por Pablo", money.format(pagadoPablo)) +
-      statCard(balanceLabel, money.format(Math.abs(balance)), balanceCls);
+    var pagadoPropio = balance * 2 + pagadoPablo;
 
-    $("balanceNote").innerHTML = balance >= 0
-      ? 'Pablo te debe <b>'+money.format(balance)+'</b> por lo que pagaste tú en COMIDA/LUZ/AGUA/INTERNET/CASA/GAS.'
-      : 'Le debes a Pablo <b>'+money.format(Math.abs(balance))+'</b> porque él pagó más de lo que le correspondía.';
+    $("balanceNote").innerHTML =
+      '<div class="balance-card">' +
+        '<div class="who">Balance de la casa · '+(anual ? state.year : MESES_LABEL[state.monthIdx])+'</div>' +
+        '<div class="amt '+balanceCls+'">'+balanceLabel+' '+money.format(Math.abs(balance))+'</div>' +
+        '<div class="note">De '+money.format(ct)+' en gastos comunes, tu mitad son '+money.format(ce)+
+          ' y Pablo pagó '+money.format(pagadoPablo)+'.</div>' +
+      '</div>';
+
+    $("compartidosStats").innerHTML =
+      statCard("Total casa", money.format(ct)) +
+      statCard("Tu mitad", money.format(ce)) +
+      statCard("Pagaste tú", money.format(pagadoPropio)) +
+      statCard("Pagó Pablo", money.format(pagadoPablo));
 
     var detalle = d.compartidos.detalle || [];
     $("compartidosDetalle").innerHTML = detalle.map(function(item){
       var valor = anual ? item.totalAnual : item.valorMes;
       var mitad = valor / 2;
       var sinPersona = item.nombre === "SALIDAS 2";
-      return '<div class="cat-row">' + catIcon(item.nombre) +
+      return '<div class="cat-row"><div class="cat-row-top">' + catIcon(item.nombre) +
         '<div class="cat-row-body">' +
         '<div class="cat-top"><span class="cat-name">'+item.nombre+'</span><span class="cat-amount">'+money.format(valor)+'</span></div>' +
-        '<div class="cat-sub">Tu mitad: '+money.format(mitad)+(sinPersona?' · no participa en el balance (viene de Manual)':'')+'</div>' +
-        '</div></div>';
+        '<div class="cat-top"><span class="cat-sub">'+(sinPersona?'No entra al balance':'50/50 con Pablo')+'</span>' +
+        '<span class="cat-of">tu mitad '+money.format(mitad)+'</span></div>' +
+        '</div></div></div>';
     }).join("") || '<div class="empty-note">Sin gastos compartidos este período.</div>';
   }
 
@@ -928,13 +1088,15 @@
     $("deudasGrid").innerHTML = personas.map(function(p){
       var saldo = Number(d.saldos[p]) || 0;
       var cls = saldo > 0 ? "pos" : (saldo < 0 ? "neg" : "");
-      var label = saldo > 0 ? p+" te debe" : (saldo < 0 ? "le debes a "+p : p+" al día");
-      return '<div class="mini'+(deudaFiltroPersona===p?" active":"")+'" data-persona="'+p+'">'
-        + '<div class="v '+cls+'">'+money.format(Math.abs(saldo))+'</div>'
-        + '<div class="l">'+label+'</div></div>';
+      var label = saldo > 0 ? p+" te debe" : (saldo < 0 ? "Le debes a "+p : p+" al día");
+      return '<div class="person-card'+(deudaFiltroPersona===p?" active":"")+'" data-persona="'+p+'">'
+        + '<span class="person-avatar">'+p.charAt(0).toUpperCase()+'</span>'
+        + '<div class="person-body">'
+        + '<div class="pv '+cls+'">'+money.format(Math.abs(saldo))+'</div>'
+        + '<div class="pl">'+label+'</div></div></div>';
     }).join("");
 
-    document.querySelectorAll("#deudasGrid .mini").forEach(function(el){
+    document.querySelectorAll("#deudasGrid .person-card").forEach(function(el){
       el.onclick = function(){
         deudaFiltroPersona = (deudaFiltroPersona === el.dataset.persona) ? "" : el.dataset.persona;
         renderDeudas();
@@ -1170,11 +1332,38 @@
     var pct = pctSeguro(totalGasto, totalPresupuesto);
     var restante = totalPresupuesto - totalGasto;
 
+    var hayPres = totalPresupuesto > 0;
+    var est = estadoPct(pct, hayPres);
+
+    $("presupuestoHero").innerHTML = ringCard({
+      titulo: "Presupuesto " + sufijoPeriodo(),
+      pct: hayPres ? pct : 0,
+      color: colorEstado(est),
+      badge: hayPres ? pct.toFixed(0) + "% usado" : "Sin presupuesto",
+      badgeCls: est === "over" ? "over" : (est === "warn" ? "warn" : ""),
+      big: hayPres ? pct.toFixed(0) + "%" : "—",
+      small: hayPres ? "del presupuesto" : "sin asignar",
+      tri: [
+        { v: money.format(totalPresupuesto), l: "Presupuesto", cls: "acc" },
+        { v: money.format(totalGasto), l: "Gastado" },
+        { v: money.format(Math.abs(restante)), l: restante >= 0 ? "Te queda" : "Te pasaste",
+          cls: restante >= 0 ? "pos" : "neg" }
+      ]
+    });
+
+    // Dos conteos que el anillo no muestra y sirven para saber dónde mirar.
+    var anual = esAnual();
+    var sobre = 0, sinPres = 0;
+    cats.forEach(function(c){
+      var v = Number(anual ? c.totalAnual : c.valorMes) || 0;
+      var p = Number(anual ? c.presupuestoAnual : c.presupuestoMensual) || 0;
+      if(p <= 0){ sinPres++; return; }
+      if(v > p) sobre++;
+    });
+
     $("presupuestoStats").innerHTML =
-      statCard("Presupuesto " + sufijoPeriodo(), money.format(totalPresupuesto)) +
-      statCard("Gastado", money.format(totalGasto)) +
-      statCard("% usado", pct.toFixed(0) + "%", pct > 100 ? "neg" : "pos") +
-      statCard(restante >= 0 ? "Te queda" : "Te pasaste", money.format(Math.abs(restante)), restante >= 0 ? "pos" : "neg");
+      statCard("Sobre presupuesto", sobre + (sobre === 1 ? " categoría" : " categorías"), sobre > 0 ? "neg" : "pos") +
+      statCard("Sin presupuesto", sinPres + (sinPres === 1 ? " categoría" : " categorías"));
   }
 
   var CHART_PALETTE = ["#0d6e7d","#1fb894","#e08e2e","#e0503f","#7c5cbf","#2b8fd1","#c2447a","#4caf50","#9c6b1f","#5f7d8c","#d1495b","#3f7d5c","#7a9e2e","#b8862e"];
@@ -1272,6 +1461,50 @@
     return '<div class="stat-card"><div class="label">'+label+'</div><div class="value'+(cls?" "+cls:"")+'">'+value+'</div></div>';
   }
 
+  // ====== Tarjeta hero con anillo de progreso ======
+  // Un solo número grande arriba (el % que importa) y los 3 montos de apoyo
+  // abajo, en vez de seis tarjetas sueltas compitiendo por atención.
+  var RING_C = 2 * Math.PI * 70; // r=70 en el viewBox de 172
+
+  // El color del anillo/barra dice cómo vas sin tener que leer el número.
+  function estadoPct(pct, hayPresupuesto){
+    if(!hayPresupuesto) return "";
+    if(pct > 100) return "over";
+    if(pct > 80) return "warn";
+    return "ok";
+  }
+  function colorEstado(estado){
+    if(estado === "over") return "var(--red)";
+    if(estado === "warn") return "var(--amber)";
+    if(estado === "ok") return "var(--green)";
+    return "var(--accent)";
+  }
+
+  function ringCard(o){
+    var pct = Math.max(0, Math.min(100, Number(o.pct) || 0));
+    var offset = RING_C * (1 - pct/100);
+    var color = o.color || "var(--accent)";
+    return '<div class="hero-card">' +
+      '<div class="hero-head"><div class="hero-title">'+o.titulo+'</div>' +
+        (o.badge ? '<div class="hero-badge'+(o.badgeCls?" "+o.badgeCls:"")+'">'+o.badge+'</div>' : '') +
+      '</div>' +
+      '<div class="ring-wrap"><div class="ring">' +
+        '<svg width="172" height="172" viewBox="0 0 172 172" aria-hidden="true">' +
+          '<circle cx="86" cy="86" r="70" fill="none" stroke="var(--surface-2)" stroke-width="16"/>' +
+          '<circle class="ring-fill" cx="86" cy="86" r="70" fill="none" stroke="'+color+'" stroke-width="16" ' +
+            'stroke-linecap="round" stroke-dasharray="'+RING_C.toFixed(1)+'" stroke-dashoffset="'+offset.toFixed(1)+'"/>' +
+        '</svg>' +
+        '<div class="ring-mid">' +
+          '<div class="ring-pct'+(o.bigSmall?" sm":"")+'" style="color:'+color+'">'+o.big+'</div>' +
+          '<div class="ring-lbl">'+o.small+'</div>' +
+        '</div>' +
+      '</div></div>' +
+      '<div class="tri">' + (o.tri||[]).map(function(t){
+        return '<div><div class="v'+(t.cls?" "+t.cls:"")+'">'+t.v+'</div><div class="l">'+t.l+'</div></div>';
+      }).join("") + '</div>' +
+    '</div>';
+  }
+
   // ====== Ahorro: KPIs del período + histórico por año ======
   function renderAhorro(){
     var d = state.data;
@@ -1291,11 +1524,29 @@
     var hist = state.historico || [];
     var acumulado = hist.reduce(function(acc,a){ return acc + (Number(a.ahorro)||0); }, 0);
 
+    var hayMeta = meta > 0;
+    var falta = meta - ahorro;
+
+    $("ahorroHero").innerHTML = ringCard({
+      titulo: "Meta " + sufijoPeriodo(),
+      pct: hayMeta ? cumplimiento : 0,
+      color: "var(--green)",
+      badge: hayMeta ? cumplimiento.toFixed(0) + "% cumplida" : "Sin meta",
+      big: hayMeta ? cumplimiento.toFixed(0) + "%" : money.format(ahorro),
+      bigSmall: !hayMeta,
+      small: hayMeta ? "de tu meta" : "ahorrado",
+      tri: [
+        { v: money.format(ahorro), l: "Ahorrado", cls: ahorro > 0 ? "pos" : "" },
+        { v: hayMeta ? money.format(meta) : "—", l: "Meta" },
+        { v: hayMeta ? money.format(Math.abs(falta)) : "—",
+          l: falta > 0 ? "Falta" : "Superaste",
+          cls: hayMeta ? (falta > 0 ? "neg" : "pos") : "" }
+      ]
+    });
+
     $("ahorroStats").innerHTML =
-      statCard("Ahorro " + sufijoPeriodo(), money.format(ahorro), ahorro > 0 ? "pos" : "") +
       statCard("Tasa de ahorro", tasa.toFixed(1) + "%", tasa >= 20 ? "pos" : (tasa > 0 ? "" : "neg")) +
-      statCard("Meta " + sufijoPeriodo(), meta > 0 ? money.format(meta) : "Sin meta") +
-      statCard("Meta cumplida", meta > 0 ? cumplimiento.toFixed(0)+"%" : "—", cumplimiento >= 100 ? "pos" : "") +
+      statCard("Ingresos " + sufijoPeriodo(), money.format(ingresos)) +
       statCard("Ganancias " + sufijoPeriodo(), money.format(ganancias), ganancias > 0 ? "pos" : "") +
       statCard("Ahorro acumulado", money.format(acumulado), acumulado > 0 ? "pos" : "");
 
@@ -1508,8 +1759,18 @@
 
   // ====== Tabs Resumen / Historial ======
   var currentView = "viewResumen";
+  // El nombre de la pestaña es ahora el título del header (antes decía siempre
+  // "Cuentas Personales", que no aportaba nada estando ya dentro de la app).
+  var VIEW_TITLES = {
+    viewResumen: "Resumen",
+    viewCompartidos: "Compartidos",
+    viewHistorial: "Historial",
+    viewPresupuesto: "Presupuesto",
+    viewAhorro: "Ahorro"
+  };
   function switchView(view){
     currentView = view;
+    $("viewTitle").textContent = VIEW_TITLES[view] || "Resumen";
     document.querySelectorAll(".view").forEach(function(v){ v.classList.remove("active"); });
     $(view).classList.add("active");
     document.querySelectorAll("nav.bottom button[data-view]").forEach(function(b){ b.classList.remove("active"); });
