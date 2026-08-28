@@ -351,10 +351,15 @@
 
   .type-tabs{display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;}
   .type-tabs button{
-    flex:1 1 auto;min-width:70px;border:1.5px solid var(--border);background:var(--surface);
-    color:var(--text-dim);padding:9px 6px;border-radius:12px;font-size:12.5px;font-weight:700;cursor:pointer;
+    flex:1 1 auto;min-width:70px;min-height:44px;border:1.5px solid var(--border);background:var(--surface);
+    color:var(--text-dim);padding:9px 8px;border-radius:12px;font-size:12.5px;font-weight:700;cursor:pointer;
+    font-family:inherit;
   }
   .type-tabs button.active{border-color:var(--accent);background:var(--accent);color:#fff;}
+  .type-hint{
+    font-size:12px;color:var(--text-dim);line-height:1.5;margin:-8px 2px 4px;
+  }
+  .type-hint:empty{display:none;}
 
   label{display:block;font-size:12px;font-weight:700;color:var(--text-dim);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.3px;}
   input,select{
@@ -653,7 +658,9 @@
       <button data-type="GANANCIA">Ganancia</button>
       <button data-type="SUELDO">Sueldo</button>
       <button data-type="AHORRO">Ahorro</button>
+      <button data-type="SALIDA2">Salida con Pablo</button>
     </div>
+    <div class="type-hint" id="typeHint"></div>
 
     <form id="entryForm">
       <div id="categoriaField">
@@ -1874,18 +1881,28 @@
   function updateFormFields(){
     var isGasto = currentType === "GASTO";
     var isGanancia = currentType === "GANANCIA";
+    // "Salida con Pablo" es el concepto SALIDAS 2: va a la hoja Manual (no a
+    // Movimientos ni a Deudas) y alimenta el bloque Compartidos de Categorías.
+    // Por eso no lleva categoría, persona ni banco: se anota el monto completo.
+    var isSalida2 = currentType === "SALIDA2";
 
     $("categoriaField").style.display = isGasto ? "block" : "none";
     $("personaField").style.display = (isGasto || isGanancia) ? "block" : "none";
     $("bancoCuotaField").style.display = isGasto ? "flex" : "none";
+
+    $("typeHint").textContent = (isSalida2 && !editingFila)
+      ? "Anota el monto completo de la salida. Aparece en Compartidos dividido entre 2, y no mueve el saldo de deudas de Pablo."
+      : "";
 
     if(!editingFila){
       $("sheetTitle").textContent = {
         GASTO: "Nuevo gasto",
         GANANCIA: "Nueva ganancia",
         SUELDO: "Registrar sueldo",
-        AHORRO: "Registrar ahorro"
+        AHORRO: "Registrar ahorro",
+        SALIDA2: "Salida compartida"
       }[currentType];
+      $("fValor").placeholder = isSalida2 ? "Monto total de la salida" : "0";
       $("submitBtn").textContent = "Guardar";
     }
   }
@@ -1923,6 +1940,9 @@
       } else if(currentType === "GANANCIA"){
         body.categoria = "GANANCIAS";
         body.persona = $("fPersona").value;
+      } else if(currentType === "SALIDA2"){
+        // El backend manda a Manual todo lo que esté en CONCEPTOS_MANUAL.
+        body.categoria = "SALIDAS 2";
       } else {
         body.categoria = currentType; // SUELDO | AHORRO
       }
