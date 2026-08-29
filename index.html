@@ -361,6 +361,13 @@
   }
   .type-hint:empty{display:none;}
 
+  .chip-list{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 18px;}
+  .chip-list button{
+    border:1.5px solid var(--border);background:var(--surface);color:var(--text-dim);
+    padding:8px 14px;border-radius:999px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;
+  }
+  .chip-list button.active{border-color:var(--accent);background:var(--accent);color:#fff;}
+
   label{display:block;font-size:12px;font-weight:700;color:var(--text-dim);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.3px;}
   input,select{
     width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--border);
@@ -593,7 +600,7 @@
       </button>
       <div class="stat-scroll" id="compartidosStats"></div>
 
-      <div class="section-title">Detalle por categoría <span class="tag">50/50 con Pablo</span></div>
+      <div class="section-title"><span>Detalle por categoría <span class="tag">50/50 con Pablo</span></span><button class="link-btn" id="editCompartidasBtn">Editar</button></div>
       <div class="card" id="compartidosDetalle"></div>
 
       <div class="section-title">Deudas personales <button class="link-btn" id="addDeudaBtn">+ Movimiento</button></div>
@@ -758,6 +765,16 @@
 
       <button type="submit" class="submit-btn" id="deudaSubmitBtn">Guardar</button>
     </form>
+  </div>
+
+  <div class="backdrop" id="compartidaBackdrop"></div>
+  <div class="sheet" id="compartidaSheet">
+    <div class="sheet-handle"></div>
+    <button class="close-x" id="closeCompartidaSheet">✕</button>
+    <h2>Categorías compartidas con Pablo</h2>
+    <div class="type-hint">Toca para marcar qué categorías se dividen 50/50 en el bloque Compartidos. "SALIDAS 2" es aparte y no se edita acá.</div>
+    <div class="chip-list" id="compartidaChips"></div>
+    <button type="button" class="submit-btn" id="compartidaGuardarBtn">Guardar</button>
   </div>
 
   <div class="backdrop" id="presupuestoEditBackdrop"></div>
@@ -2065,6 +2082,57 @@
       btn.textContent = "Crear categoría";
     });
   });
+
+  // ====== Categorías compartidas con Pablo ======
+  function openCompartidaSheet(){
+    var cats = (state.listas && state.listas.categorias) || [];
+    var actuales = ((state.data && state.data.compartidos && state.data.compartidos.detalle) || [])
+      .map(function(item){ return String(item.nombre).trim().toUpperCase(); })
+      .filter(function(n){ return n !== "SALIDAS 2"; });
+
+    $("compartidaChips").innerHTML = cats.map(function(c){
+      var activo = actuales.indexOf(String(c).trim().toUpperCase()) !== -1;
+      return '<button type="button" class="'+(activo?"active":"")+'" data-cat="'+c+'">'+c+'</button>';
+    }).join("") || '<div class="empty-note">No hay categorías creadas todavía.</div>';
+
+    document.querySelectorAll('#compartidaChips button').forEach(function(btn){
+      btn.onclick = function(){ btn.classList.toggle("active"); };
+    });
+
+    $("compartidaBackdrop").classList.add("show");
+    $("compartidaSheet").classList.add("show");
+  }
+  function closeCompartidaSheet(){
+    $("compartidaBackdrop").classList.remove("show");
+    $("compartidaSheet").classList.remove("show");
+  }
+  $("editCompartidasBtn").onclick = openCompartidaSheet;
+  $("closeCompartidaSheet").onclick = closeCompartidaSheet;
+  $("compartidaBackdrop").onclick = closeCompartidaSheet;
+
+  $("compartidaGuardarBtn").onclick = function(){
+    var seleccionadas = Array.prototype.map.call(
+      document.querySelectorAll('#compartidaChips button.active'),
+      function(btn){ return btn.dataset.cat; }
+    );
+    var btn = $("compartidaGuardarBtn");
+    btn.disabled = true;
+    btn.textContent = "Guardando...";
+    apiPost({
+      accion: "guardarCategoriasCompartidas",
+      categorias: seleccionadas
+    }).then(function(json){
+      if(!json.ok) throw new Error(json.error || "Error desconocido");
+      showToast("Categorías compartidas actualizadas ✓", "ok");
+      closeCompartidaSheet();
+      loadData(true);
+    }).catch(function(err){
+      showToast("Error: " + err.message, "err");
+    }).finally(function(){
+      btn.disabled = false;
+      btn.textContent = "Guardar";
+    });
+  };
 
   // ====== Movimiento de deuda ======
   var DEUDA_HINTS = {
