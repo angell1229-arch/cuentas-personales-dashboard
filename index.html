@@ -664,7 +664,6 @@
       <button data-type="GANANCIA">Ganancia</button>
       <button data-type="SUELDO">Sueldo</button>
       <button data-type="AHORRO">Ahorro</button>
-      <button data-type="SALIDA2">Salida con Pablo</button>
     </div>
     <div class="type-hint" id="typeHint"></div>
 
@@ -1805,9 +1804,16 @@
   var currentType = "GASTO";
   var editingFila = null;
 
+  // "Salidas con Pablo" no es una categoría real de la hoja Categorías: es una
+  // opción especial que aparece en el mismo selector. Al elegirla, el backend
+  // parte el monto en dos (ver accion "salidaConPablo" en Code.gs) — no se
+  // guarda tal cual bajo esa categoría.
+  var CATEGORIA_SALIDA_PABLO = "Salidas con Pablo";
+
   function populateSelects(){
     var cats = (state.listas && state.listas.categorias) || [];
-    $("fCategoria").innerHTML = cats.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join("");
+    $("fCategoria").innerHTML = cats.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join("") +
+      '<optgroup label="Compartido"><option value="'+CATEGORIA_SALIDA_PABLO+'">'+CATEGORIA_SALIDA_PABLO+'</option></optgroup>';
 
     var personas = (state.listas && state.listas.personas) || PERSONAS;
     $("fPersona").innerHTML = personas.map(function(p){ return '<option value="'+p+'">'+p+'</option>'; }).join("");
@@ -1913,35 +1919,38 @@
     btn.onclick = function(){ setType(btn.dataset.type); };
   });
 
+  function esSalidaConPablo(){
+    return currentType === "GASTO" && $("fCategoria").value === CATEGORIA_SALIDA_PABLO;
+  }
+
   function updateFormFields(){
     var isGasto = currentType === "GASTO";
     var isGanancia = currentType === "GANANCIA";
-    // "Salida con Pablo" es el concepto SALIDAS 2: va a la hoja Manual (no a
-    // Movimientos ni a Deudas) y alimenta el bloque Compartidos de Categorías.
-    // Por eso no lleva categoría, persona ni banco: se anota el monto completo.
-    var isSalida2 = currentType === "SALIDA2";
+    var isSalidaPablo = esSalidaConPablo();
 
     $("categoriaField").style.display = isGasto ? "block" : "none";
-    $("personaField").style.display = (isGasto || isGanancia) ? "block" : "none";
+    // "¿De quién es?" no aplica: el backend siempre parte la mitad propia como
+    // Persona=Propio, y la mitad compartida va a Manual (que no tiene Persona).
+    $("personaField").style.display = (isGasto && !isSalidaPablo) || isGanancia ? "block" : "none";
     $("bancoCuotaField").style.display = isGasto ? "flex" : "none";
 
-    $("typeHint").textContent = (isSalida2 && !editingFila)
-      ? "Anota el monto completo de la salida. Aparece en Compartidos dividido entre 2, y no mueve el saldo de deudas de Pablo."
+    $("typeHint").textContent = (isSalidaPablo && !editingFila)
+      ? "Anota el monto total de la salida. La mitad se registra como gasto tuyo en SALIDAS, y la otra mitad queda como compartido con Pablo (no mueve su saldo de deudas)."
       : "";
 
     if(!editingFila){
-      $("sheetTitle").textContent = {
+      $("sheetTitle").textContent = isSalidaPablo ? "Salida con Pablo" : {
         GASTO: "Nuevo gasto",
         GANANCIA: "Nueva ganancia",
         SUELDO: "Registrar sueldo",
-        AHORRO: "Registrar ahorro",
-        SALIDA2: "Salida compartida"
+        AHORRO: "Registrar ahorro"
       }[currentType];
-      $("fValor").placeholder = isSalida2 ? "Monto total de la salida" : "0";
+      $("fValor").placeholder = isSalidaPablo ? "Monto total de la salida" : "0";
       $("submitBtn").textContent = "Guardar";
     }
   }
   updateFormFields();
+  $("fCategoria").addEventListener("change", updateFormFields);
 
   $("entryForm").addEventListener("submit", function(e){
     e.preventDefault();
@@ -1964,6 +1973,16 @@
         valor: valor,
         detalle: $("fDetalle").value || ""
       });
+    } else if(esSalidaConPablo()){
+      btn.textContent = "Guardando...";
+      promesa = apiPost({
+        accion: "salidaConPablo",
+        valor: valor,
+        detalle: $("fDetalle").value || "",
+        fecha: $("fFecha").value,
+        banco: getBancoValue(),
+        cuota: $("fCuota").value || 1
+      });
     } else {
       btn.textContent = "Guardando...";
       var body = { valor: valor, detalle: $("fDetalle").value || "", fecha: $("fFecha").value };
@@ -1975,9 +1994,6 @@
       } else if(currentType === "GANANCIA"){
         body.categoria = "GANANCIAS";
         body.persona = $("fPersona").value;
-      } else if(currentType === "SALIDA2"){
-        // El backend manda a Manual todo lo que esté en CONCEPTOS_MANUAL.
-        body.categoria = "SALIDAS 2";
       } else {
         body.categoria = currentType; // SUELDO | AHORRO
       }
