@@ -376,6 +376,12 @@
     font-size:15px;font-weight:700;cursor:pointer;
   }
   .submit-btn:disabled{opacity:.6;}
+  /* Separado del submit y en rojo a propósito: es destructivo e irreversible. */
+  .delete-btn{
+    width:100%;margin-top:10px;padding:13px;border:1.5px solid var(--red);border-radius:14px;
+    background:none;color:var(--red);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;
+  }
+  .delete-btn:disabled{opacity:.6;}
   .ghost-btn{
     width:100%;margin-top:10px;padding:12px;border:1.5px dashed var(--border);border-radius:14px;
     background:none;color:var(--accent);font-size:13.5px;font-weight:700;cursor:pointer;
@@ -697,6 +703,7 @@
       <input type="text" id="fDetalle" placeholder="Opcional">
 
       <button type="submit" class="submit-btn" id="submitBtn">Guardar</button>
+      <button type="button" class="delete-btn" id="deleteBtn" style="display:none;">Eliminar este gasto</button>
     </form>
   </div>
 
@@ -1837,6 +1844,7 @@
     $("entryForm").reset();
     $("fBancoOtro").style.display = "none";
     $("fFecha").value = new Date().toISOString().slice(0,10);
+    $("deleteBtn").style.display = "none";
     setType("GASTO");
     $("backdrop").classList.add("show");
     $("sheet").classList.add("show");
@@ -1857,9 +1865,36 @@
     $("fDetalle").value = mov.detalle || "";
     $("fFecha").value = new Date(state.year, state.monthIdx, mov.dia || 1).toISOString().slice(0,10);
     $("submitBtn").textContent = "Guardar cambios";
+    $("deleteBtn").style.display = "block";
     $("backdrop").classList.add("show");
     $("sheet").classList.add("show");
   }
+
+  $("deleteBtn").onclick = function(){
+    if(!editingFila) return;
+    var mov = (state.movimientos || []).find(function(m){ return m.fila === editingFila; });
+    var nombre = mov ? (mov.categoria + (mov.detalle ? " · " + mov.detalle : "") + " · " + money.format(mov.valor)) : "este gasto";
+    if(!confirm('¿Eliminar "'+nombre+'"? No se puede deshacer.')) return;
+
+    var btn = $("deleteBtn");
+    btn.disabled = true;
+    btn.textContent = "Eliminando...";
+    apiPost({ accion: "eliminarMovimiento", fila: editingFila })
+      .then(function(json){
+        if(!json.ok) throw new Error(json.error || "Error desconocido");
+        showToast("Gasto eliminado ✓", "ok");
+        closeSheet();
+        loadData(true);
+        if(currentView === "viewHistorial") loadMovimientos();
+      })
+      .catch(function(err){
+        showToast("Error: " + err.message, "err");
+      })
+      .finally(function(){
+        btn.disabled = false;
+        btn.textContent = "Eliminar este gasto";
+      });
+  };
 
   function closeSheet(){
     $("backdrop").classList.remove("show");
