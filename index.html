@@ -395,18 +395,22 @@
   }
   .link-inline{background:none;border:none;color:var(--accent);font-size:12.5px;font-weight:700;cursor:pointer;padding:0;margin-top:6px;}
 
-  .budget-bar-row{padding:12px 0;border-bottom:1px solid var(--border);}
-  .budget-bar-row:last-child{border-bottom:none;}
-  .budget-bar-top{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
-  .budget-bar-name{flex:1;min-width:0;font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  .budget-bar-pct{font-size:11.5px;font-weight:700;color:var(--text-dim);flex:0 0 auto;}
-  .budget-bar-track{height:9px;border-radius:6px;background:var(--surface-2);overflow:hidden;}
+  .budget-card-grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:16px;}
+  .budget-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow);
+    padding:12px;min-width:0;
+  }
+  .budget-bar-top{display:flex;align-items:flex-start;gap:7px;margin-bottom:7px;}
+  .budget-bar-name{flex:1;min-width:0;font-size:12px;font-weight:600;line-height:1.25;word-break:break-word;padding-top:2px;}
+  .budget-bar-pct{font-size:11px;font-weight:700;color:var(--text-dim);flex:0 0 auto;padding-top:2px;}
+  .budget-bar-track{height:8px;border-radius:6px;background:var(--surface-2);overflow:hidden;}
   .budget-bar-fill{height:100%;border-radius:6px;transition:width .4s ease;}
-  .budget-bar-edit{display:flex;align-items:center;gap:8px;margin-top:8px;}
-  .budget-bar-edit input{flex:1;padding:8px 10px;font-size:13px;}
+  .budget-card .cat-sub{white-space:normal;}
+  .budget-bar-edit{display:flex;align-items:center;gap:6px;margin-top:8px;}
+  .budget-bar-edit input{flex:1;min-width:0;padding:7px 8px;font-size:12.5px;}
   .budget-bar-save{
-    flex:0 0 auto;width:36px;height:36px;border-radius:10px;border:none;
-    background:var(--accent);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;
+    flex:0 0 auto;width:32px;height:32px;border-radius:9px;border:none;
+    background:var(--accent);color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;
   }
   .budget-bar-save:disabled{opacity:.6;}
 
@@ -532,6 +536,7 @@
     }
     .hero-card{max-width:520px;}
     .people-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));}
+    .budget-card-grid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));}
 
     .resumen-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;align-items:start;}
     .cat-columns{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
@@ -633,7 +638,7 @@
       <div class="stat-scroll" id="presupuestoStats"></div>
 
       <div class="section-title">Presupuesto por categoría <span class="tag">mayor a menor</span></div>
-      <div class="card" style="padding:4px 16px;" id="presupuestoBars"></div>
+      <div class="budget-card-grid" id="presupuestoBars"></div>
     </div>
 
     <!-- Pestaña "Metas". Los ids internos siguen diciendo "ahorro" porque nació
@@ -1027,7 +1032,10 @@
 
   // ====== API ======
   function apiGet(params){
-    var qs = Object.keys(params).map(function(k){ return k+"="+encodeURIComponent(params[k]); }).join("&");
+    var withToken = {};
+    Object.keys(params).forEach(function(k){ withToken[k] = params[k]; });
+    withToken.token = API_TOKEN;
+    var qs = Object.keys(withToken).map(function(k){ return k+"="+encodeURIComponent(withToken[k]); }).join("&");
     return fetch(API_URL + "?" + qs).then(function(r){ return r.json(); });
   }
   function apiPost(body){
@@ -1572,8 +1580,8 @@
       var sub = c.valor > 0
         ? (c.meta ? "Ahorrado: " : "Gastado: ") + money.format(c.gastado) + " · " + pctSeguro(c.gastado, c.valor).toFixed(0) + "% de la meta"
         : "Sin presupuesto asignado";
-      return '<div class="budget-bar-row">' +
-        '<div class="budget-bar-top">' + catIcon(c.nombre) +
+      return '<div class="budget-card">' +
+        '<div class="budget-bar-top">' + catIcon(c.nombre, 'sm') +
         '<span class="budget-bar-name">'+esc(c.nombre)+(c.meta?' <span class="tag" style="font-size:9px;padding:1px 6px;">meta</span>':'')+'</span>' +
         '<span class="budget-bar-pct">'+pct.toFixed(1)+'%</span>' +
         '</div>' +
@@ -1587,7 +1595,7 @@
         '</div>';
     }).join("");
 
-    document.querySelectorAll("#presupuestoBars .budget-bar-row").forEach(function(row, i){
+    document.querySelectorAll("#presupuestoBars .budget-card").forEach(function(row, i){
       var input = row.querySelector(".budget-bar-input");
       attachMilesInput(input);
       row.querySelector(".budget-bar-save").onclick = function(e){
