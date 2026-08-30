@@ -772,7 +772,7 @@
     <div class="sheet-handle"></div>
     <button class="close-x" id="closeCompartidaSheet">✕</button>
     <h2>Categorías compartidas con Pablo</h2>
-    <div class="type-hint">Toca para marcar qué categorías se dividen 50/50 en el bloque Compartidos. "SALIDAS 2" es aparte y no se edita acá.</div>
+    <div class="type-hint">Toca para marcar qué categorías se dividen 50/50 con Pablo.</div>
     <div class="chip-list" id="compartidaChips"></div>
     <button type="button" class="submit-btn" id="compartidaGuardarBtn">Guardar</button>
   </div>
@@ -1080,11 +1080,10 @@
     $("compartidosDetalle").innerHTML = detalle.map(function(item){
       var valor = anual ? item.totalAnual : item.valorMes;
       var mitad = valor / 2;
-      var sinPersona = item.nombre === "SALIDAS 2";
       return '<div class="cat-row"><div class="cat-row-top">' + catIcon(item.nombre) +
         '<div class="cat-row-body">' +
         '<div class="cat-top"><span class="cat-name">'+item.nombre+'</span><span class="cat-amount">'+money.format(valor)+'</span></div>' +
-        '<div class="cat-top"><span class="cat-sub">'+(sinPersona?'No entra al balance':'50/50 con Pablo')+'</span>' +
+        '<div class="cat-top"><span class="cat-sub">50/50 con Pablo</span>' +
         '<span class="cat-of">tu mitad '+money.format(mitad)+'</span></div>' +
         '</div></div></div>';
     }).join("") || '<div class="empty-note">Sin gastos compartidos este período.</div>';
@@ -1175,8 +1174,7 @@
     var detalle = (d.compartidos.detalle || []).map(function(item){
       return {
         nombre: item.nombre,
-        valor: Number(anual ? item.totalAnual : item.valorMes) || 0,
-        enBalance: item.nombre !== "SALIDAS 2"
+        valor: Number(anual ? item.totalAnual : item.valorMes) || 0
       };
     }).filter(function(i){ return i.valor > 0; });
 
@@ -1205,9 +1203,8 @@
     var W = 760, padX = 44, escala = 2; // 1520px de ancho: nítido en celular sin pesar de más
     var headerH = 142, gapHeader = 34, thH = 34, rowH = 44, gapTabla = 26;
     var totalesH = 96, pagosH = 100, balanceH = 136, footerH = 76;
-    var hayNota = info.detalle.some(function(i){ return !i.enBalance; });
     var H = headerH + gapHeader + thH + info.detalle.length*rowH + gapTabla +
-            totalesH + pagosH + balanceH + footerH + (hayNota ? 30 : 0);
+            totalesH + pagosH + balanceH + footerH;
 
     var canvas = document.createElement("canvas");
     canvas.width = W * escala;
@@ -1257,7 +1254,7 @@
         roundRect(ctx, padX - 14, y + 2, W - (padX-14)*2, rowH - 4, 8);
         ctx.fill();
       }
-      texto(item.nombre + (item.enBalance ? "" : " *"), padX, cy, C.texto, 18, 600);
+      texto(item.nombre, padX, cy, C.texto, 18, 600);
       texto(money.format(item.valor), W - padX - 170, cy, C.texto, 18, 700, "right");
       texto(money.format(item.valor/2), W - padX, cy, C.dim, 17, 500, "right");
       y += rowH;
@@ -1293,12 +1290,6 @@
           W/2, y + 44, "rgba(255,255,255,0.92)", 15, 700, "center");
     texto(money.format(monto), W/2, y + 90, "#ffffff", 40, 800, "center");
     y += balanceH;
-
-    if(hayNota){
-      texto("* SALIDAS 2 se muestra como referencia pero no entra en el cálculo del balance.",
-            padX, y + 6, C.dim, 14, 500);
-      y += 30;
-    }
 
     // Pie
     var hoy = new Date();
@@ -1821,16 +1812,9 @@
   var currentType = "GASTO";
   var editingFila = null;
 
-  // "Salidas con Pablo" no es una categoría real de la hoja Categorías: es una
-  // opción especial que aparece en el mismo selector. Al elegirla, el backend
-  // parte el monto en dos (ver accion "salidaConPablo" en Code.gs) — no se
-  // guarda tal cual bajo esa categoría.
-  var CATEGORIA_SALIDA_PABLO = "Salidas con Pablo";
-
   function populateSelects(){
     var cats = (state.listas && state.listas.categorias) || [];
-    $("fCategoria").innerHTML = cats.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join("") +
-      '<optgroup label="Compartido"><option value="'+CATEGORIA_SALIDA_PABLO+'">'+CATEGORIA_SALIDA_PABLO+'</option></optgroup>';
+    $("fCategoria").innerHTML = cats.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join("");
 
     var personas = (state.listas && state.listas.personas) || PERSONAS;
     $("fPersona").innerHTML = personas.map(function(p){ return '<option value="'+p+'">'+p+'</option>'; }).join("");
@@ -1936,33 +1920,24 @@
     btn.onclick = function(){ setType(btn.dataset.type); };
   });
 
-  function esSalidaConPablo(){
-    return currentType === "GASTO" && $("fCategoria").value === CATEGORIA_SALIDA_PABLO;
-  }
-
   function updateFormFields(){
     var isGasto = currentType === "GASTO";
     var isGanancia = currentType === "GANANCIA";
-    var isSalidaPablo = esSalidaConPablo();
 
     $("categoriaField").style.display = isGasto ? "block" : "none";
-    // "¿De quién es?" no aplica: el backend siempre parte la mitad propia como
-    // Persona=Propio, y la mitad compartida va a Manual (que no tiene Persona).
-    $("personaField").style.display = (isGasto && !isSalidaPablo) || isGanancia ? "block" : "none";
+    $("personaField").style.display = isGasto || isGanancia ? "block" : "none";
     $("bancoCuotaField").style.display = isGasto ? "flex" : "none";
 
-    $("typeHint").textContent = (isSalidaPablo && !editingFila)
-      ? "Anota el monto total de la salida. La mitad se registra como gasto tuyo en SALIDAS, y la otra mitad queda como compartido con Pablo (no mueve su saldo de deudas)."
-      : "";
+    $("typeHint").textContent = "";
 
     if(!editingFila){
-      $("sheetTitle").textContent = isSalidaPablo ? "Salida con Pablo" : {
+      $("sheetTitle").textContent = {
         GASTO: "Nuevo gasto",
         GANANCIA: "Nueva ganancia",
         SUELDO: "Registrar sueldo",
         AHORRO: "Registrar ahorro"
       }[currentType];
-      $("fValor").placeholder = isSalidaPablo ? "Monto total de la salida" : "0";
+      $("fValor").placeholder = "0";
       $("submitBtn").textContent = "Guardar";
     }
   }
@@ -1989,16 +1964,6 @@
         cuota: $("fCuota").value || 1,
         valor: valor,
         detalle: $("fDetalle").value || ""
-      });
-    } else if(esSalidaConPablo()){
-      btn.textContent = "Guardando...";
-      promesa = apiPost({
-        accion: "salidaConPablo",
-        valor: valor,
-        detalle: $("fDetalle").value || "",
-        fecha: $("fFecha").value,
-        banco: getBancoValue(),
-        cuota: $("fCuota").value || 1
       });
     } else {
       btn.textContent = "Guardando...";
@@ -2087,8 +2052,7 @@
   function openCompartidaSheet(){
     var cats = (state.listas && state.listas.categorias) || [];
     var actuales = ((state.data && state.data.compartidos && state.data.compartidos.detalle) || [])
-      .map(function(item){ return String(item.nombre).trim().toUpperCase(); })
-      .filter(function(n){ return n !== "SALIDAS 2"; });
+      .map(function(item){ return String(item.nombre).trim().toUpperCase(); });
 
     $("compartidaChips").innerHTML = cats.map(function(c){
       var activo = actuales.indexOf(String(c).trim().toUpperCase()) !== -1;
