@@ -640,6 +640,11 @@
          como pestaña de Ahorro (2026-08-23) y ese bloque sigue vivo más abajo;
          desde el 2026-08-30 la encabeza la lista de metas con objetivo y fecha. -->
     <div class="view" id="viewAhorro">
+      <div class="section-title">Patrimonio <button class="link-btn" id="addSaldoBtn">+ Cuenta</button></div>
+      <div id="patrimonioHero"></div>
+      <div class="stat-scroll" id="patrimonioStats"></div>
+      <div class="card" id="saldosList"></div>
+
       <div class="section-title">Mis metas <button class="link-btn" id="addMetaBtn">+ Nueva meta</button></div>
       <div class="card" id="metasList"></div>
 
@@ -794,6 +799,40 @@
     </form>
   </div>
 
+  <div class="backdrop" id="saldoBackdrop"></div>
+  <div class="sheet" id="saldoSheet">
+    <div class="sheet-handle"></div>
+    <button class="close-x" id="closeSaldoSheet">✕</button>
+    <h2 id="saldoSheetTitle">Nueva cuenta</h2>
+    <form id="saldoForm">
+      <label>Nombre</label>
+      <input type="text" id="sCuenta" placeholder="Ej: Cuenta corriente BCI" required>
+
+      <label>Categoría</label>
+      <div class="type-tabs" id="saldoCatTabs">
+        <button type="button" class="active" data-cat="Efectivo">Efectivo</button>
+        <button type="button" data-cat="Inversión">Inversión</button>
+        <button type="button" data-cat="Propiedad">Propiedad</button>
+        <button type="button" data-cat="Vehículo">Vehículo</button>
+        <button type="button" data-cat="Deuda">Deuda</button>
+      </div>
+      <div class="type-hint" id="saldoCatHint"></div>
+
+      <label>Monto ($)</label>
+      <input type="text" id="sMonto" inputmode="numeric" placeholder="0" required>
+
+      <label>% que es tuyo</label>
+      <div class="presu-hint">100% si es solo tuyo. Si es a medias con Pablo (como las casas), pon 50 y la app calcula tu parte sola.</div>
+      <input type="text" id="sPctPropio" inputmode="numeric" placeholder="100">
+
+      <label>Detalle (opcional)</label>
+      <input type="text" id="sDetalle" placeholder="Ej: saldo pendiente del crédito">
+
+      <button type="submit" class="submit-btn" id="saldoSubmitBtn">Guardar cuenta</button>
+      <button type="button" class="delete-btn" id="saldoDeleteBtn" style="display:none;">Eliminar esta cuenta</button>
+    </form>
+  </div>
+
   <div class="backdrop" id="metaBackdrop"></div>
   <div class="sheet" id="metaSheet">
     <div class="sheet-handle"></div>
@@ -934,6 +973,12 @@
     'SUELDO':'<path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>',
     'GANANCIAS':'<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/>',
     'COMPRA DE CASA':'<path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.8V20a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9.8"/><path d="M12 12v6M9 15h6"/>',
+    // Categorías de la hoja Saldos (patrimonio, 2026-08-30).
+    'EFECTIVO':'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>',
+    'INVERSION':'<path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>',
+    'PROPIEDAD':'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
+    'VEHICULO':'<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
+    'DEUDA':'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/>',
     '_DEFAULT':'<path d="M20.6 13.4 12 22l-9-9V4a1 1 0 0 1 1-1h9l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none"/>'
   };
   function iconKey(name){
@@ -961,7 +1006,8 @@
     movimientos: null,
     historico: null,
     deudas: null,
-    metas: null
+    metas: null,
+    saldos: null
   };
   var deudaFiltroPersona = "";
 
@@ -1659,6 +1705,174 @@
     renderHistoricoAnios();
   }
 
+  // ====== Patrimonio (hoja Saldos) ======
+  // A diferencia de Movimientos, Saldos no es un ledger: cada fila es el estado
+  // ACTUAL de una cuenta y se edita en el lugar cuando cambia de valor (igual
+  // que un balance de banco, no una lista de transacciones).
+  var SALDO_CAT_HINTS = {
+    "Efectivo": "Plata disponible ya: cuentas corrientes, vista, ahorro. Es lo único que cuenta para el fondo de emergencia.",
+    "Inversión": "Acciones, fondos mutuos, depósitos a plazo.",
+    "Propiedad": "Casas o departamentos, al valor de mercado o de compra.",
+    "Vehículo": "Autos, motos: un valor de referencia (Yapo/Chileautos) sirve.",
+    "Deuda": "Créditos pendientes: hipotecario, de consumo, tarjetas. Se resta sola del patrimonio."
+  };
+
+  function loadSaldos(){
+    return apiGet({ accion: "saldos" }).then(function(json){
+      if(!json.ok) throw new Error(json.error || "Error desconocido");
+      state.saldos = json;
+      renderPatrimonio();
+    }).catch(function(err){
+      $("saldosList").innerHTML = '<div class="empty-note">Error cargando patrimonio: '+err.message+'</div>';
+    });
+  }
+
+  function renderPatrimonio(){
+    var s = state.saldos;
+    if(!s) return;
+
+    var hayFondo = s.fondoEmergenciaMeses !== null;
+    var mesesFondo = hayFondo ? s.fondoEmergenciaMeses : 0;
+    var estFondo = mesesFondo >= 6 ? "ok" : (mesesFondo >= 3 ? "warn" : "over");
+
+    $("patrimonioHero").innerHTML = ringCard({
+      titulo: "Patrimonio neto",
+      pct: Math.min(100, Math.max(0, pctSeguro(s.activos, s.activos + s.pasivos))),
+      color: s.patrimonioNeto >= 0 ? "var(--green)" : "var(--red)",
+      badge: s.cuentas.length ? (s.cuentas.length+" cuenta"+(s.cuentas.length===1?"":"s")) : "Sin cuentas",
+      big: money.format(s.patrimonioNeto),
+      bigSmall: true,
+      small: "activos menos deudas",
+      tri: [
+        { v: money.format(s.activos), l: "Activos", cls: "pos" },
+        { v: money.format(s.pasivos), l: "Deudas", cls: s.pasivos > 0 ? "neg" : "" },
+        { v: hayFondo ? mesesFondo.toFixed(1)+" m" : "—", l: "Fondo emerg.",
+          cls: hayFondo ? (estFondo === "ok" ? "pos" : (estFondo === "over" ? "neg" : "")) : "" }
+      ]
+    });
+
+    $("patrimonioStats").innerHTML = CATEGORIAS_SALDO_CACHE.map(function(cat){
+      var suma = s.cuentas.filter(function(c){ return c.categoria === cat; })
+                           .reduce(function(a,c){ return a + c.propio; }, 0);
+      return statCard(cat, money.format(suma), cat === "Deuda" && suma > 0 ? "neg" : (suma > 0 ? "" : ""));
+    }).join("");
+
+    if(!s.cuentas.length){
+      $("saldosList").innerHTML = '<div class="empty-note">Aún no tienes cuentas cargadas. Suma tus ahorros, inversiones, propiedades, vehículos y deudas para ver tu patrimonio real. Toca "+ Cuenta".</div>';
+      return;
+    }
+
+    $("saldosList").innerHTML = s.cuentas.map(function(c){
+      var esDeuda = c.categoria === "Deuda";
+      var compartida = c.pctPropio < 100;
+      return '<div class="cat-row saldo-row" data-fila="'+c.fila+'"><div class="cat-row-top">' +
+        catIcon(c.categoria) +
+        '<div class="cat-row-body">' +
+        '<div class="cat-top"><span class="cat-name">'+c.cuenta+'</span>' +
+        '<span class="cat-amount" style="color:'+(esDeuda?"var(--red)":"var(--text)")+'">'+(esDeuda?"−":"")+money.format(c.propio)+'</span></div>' +
+        '<div class="cat-top"><span class="cat-sub">'+c.categoria+(compartida?' · '+c.pctPropio+'% tuyo':'')+'</span>' +
+        (compartida ? '<span class="cat-of">de '+money.format(c.monto)+'</span>' : '') +
+        '</div></div></div></div>';
+    }).join("");
+
+    document.querySelectorAll("#saldosList .saldo-row").forEach(function(el){
+      el.onclick = function(){ openSaldoSheet(Number(el.dataset.fila)); };
+    });
+  }
+
+  var CATEGORIAS_SALDO_CACHE = ["Efectivo","Inversión","Propiedad","Vehículo","Deuda"];
+  var saldoCategoria = "Efectivo";
+  var saldoEditando = null;
+  attachMilesInput($("sMonto"));
+
+  function setSaldoCategoria(cat){
+    saldoCategoria = cat;
+    document.querySelectorAll('#saldoCatTabs button').forEach(function(b){ b.classList.toggle("active", b.dataset.cat === cat); });
+    $("saldoCatHint").textContent = SALDO_CAT_HINTS[cat] || "";
+  }
+  function openSaldoSheet(fila){
+    var c = fila ? (state.saldos.cuentas || []).filter(function(x){ return x.fila === fila; })[0] : null;
+    saldoEditando = c ? c.fila : null;
+    $("saldoForm").reset();
+    setSaldoCategoria(c ? c.categoria : "Efectivo");
+
+    $("saldoSheetTitle").textContent = c ? "Editar cuenta" : "Nueva cuenta";
+    $("saldoSubmitBtn").textContent = c ? "Guardar cambios" : "Guardar cuenta";
+    $("saldoDeleteBtn").style.display = c ? "block" : "none";
+    if(c){
+      $("sCuenta").value = c.cuenta;
+      $("sMonto").value = formatMiles(Math.round(c.monto));
+      $("sPctPropio").value = c.pctPropio;
+      $("sDetalle").value = c.detalle || "";
+    } else {
+      $("sPctPropio").value = "100";
+    }
+    $("saldoBackdrop").classList.add("show");
+    $("saldoSheet").classList.add("show");
+  }
+  function closeSaldoSheet(){
+    $("saldoBackdrop").classList.remove("show");
+    $("saldoSheet").classList.remove("show");
+  }
+  $("addSaldoBtn").onclick = function(){ openSaldoSheet(null); };
+  $("closeSaldoSheet").onclick = closeSaldoSheet;
+  $("saldoBackdrop").onclick = closeSaldoSheet;
+  document.querySelectorAll('#saldoCatTabs button').forEach(function(btn){
+    btn.onclick = function(){ setSaldoCategoria(btn.dataset.cat); };
+  });
+
+  $("saldoForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var cuenta = $("sCuenta").value.trim();
+    var monto = parseMiles($("sMonto").value);
+    if(!cuenta){ showToast("Falta el nombre", "err"); return; }
+    if(!monto || monto <= 0){ showToast("El monto debe ser mayor que 0", "err"); return; }
+
+    var btn = $("saldoSubmitBtn");
+    btn.disabled = true;
+    btn.textContent = "Guardando...";
+    apiPost({
+      accion: "guardarSaldo",
+      fila: saldoEditando,
+      cuenta: cuenta,
+      categoria: saldoCategoria,
+      monto: monto,
+      pctPropio: $("sPctPropio").value || 100,
+      detalle: $("sDetalle").value || ""
+    }).then(function(json){
+      if(!json.ok) throw new Error(json.error || "Error desconocido");
+      showToast("Cuenta guardada ✓", "ok");
+      closeSaldoSheet();
+      loadSaldos();
+    }).catch(function(err){
+      showToast("Error: " + err.message, "err");
+    }).finally(function(){
+      btn.disabled = false;
+      btn.textContent = saldoEditando ? "Guardar cambios" : "Guardar cuenta";
+    });
+  });
+
+  $("saldoDeleteBtn").onclick = function(){
+    if(!saldoEditando) return;
+    var c = (state.saldos.cuentas || []).filter(function(x){ return x.fila === saldoEditando; })[0];
+    if(!confirm('¿Eliminar "'+(c ? c.cuenta : "")+'"? No se puede deshacer.')) return;
+    var btn = $("saldoDeleteBtn");
+    btn.disabled = true;
+    btn.textContent = "Eliminando...";
+    apiPost({ accion: "eliminarSaldo", fila: saldoEditando })
+      .then(function(json){
+        if(!json.ok) throw new Error(json.error || "Error desconocido");
+        showToast("Cuenta eliminada ✓", "ok");
+        closeSaldoSheet();
+        loadSaldos();
+      })
+      .catch(function(err){ showToast("Error: " + err.message, "err"); })
+      .finally(function(){
+        btn.disabled = false;
+        btn.textContent = "Eliminar esta cuenta";
+      });
+  };
+
   // ====== Metas ======
   // El progreso lo calcula el backend leyendo la fuente que corresponde a cada
   // tipo, así que una meta se mueve sola cuando Angel registra un gasto o un
@@ -2103,7 +2317,7 @@
     if(view === "viewHistorial") loadMovimientos();
     if(view === "viewCompartidos"){ renderCompartidos(); loadDeudas(); }
     if(view === "viewPresupuesto") loadPresupuesto();
-    if(view === "viewAhorro"){ renderAhorro(); loadHistorico(); loadMetas(); loadDeudas(); }
+    if(view === "viewAhorro"){ renderAhorro(); loadHistorico(); loadMetas(); loadDeudas(); loadSaldos(); }
   }
   $("navResumen").onclick = function(){ switchView("viewResumen"); };
   $("navHistorial").onclick = function(){ switchView("viewHistorial"); };
