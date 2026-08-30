@@ -771,7 +771,7 @@
   <div class="sheet" id="deudaSheet">
     <div class="sheet-handle"></div>
     <button class="close-x" id="closeDeudaSheet">✕</button>
-    <h2>Movimiento de deuda</h2>
+    <h2 id="deudaSheetTitle">Movimiento de deuda</h2>
     <form id="deudaForm">
       <label>Persona</label>
       <select id="dPersona"></select>
@@ -796,6 +796,7 @@
       <input type="text" id="dDetalle" placeholder="Opcional">
 
       <button type="submit" class="submit-btn" id="deudaSubmitBtn">Guardar</button>
+      <button type="button" class="delete-btn" id="deudaDeleteBtn" style="display:none;">Eliminar este movimiento</button>
     </form>
   </div>
 
@@ -938,6 +939,15 @@
   // Inputs de presupuesto: se muestran con puntos de miles (formato CLP) pero
   // guardan/leen el número real. type="text" porque un <input type="number">
   // no puede mostrar puntos.
+  // Todo el texto que Angel escribe (detalle, nombre de cuenta, categoría
+  // nueva...) se inserta con innerHTML en vez de textContent, así que se
+  // escapa antes de concatenar. Riesgo real bajo (solo él usa la app), pero
+  // barato de cerrar (detectado en la auditoría del 2026-08-30).
+  function esc(s){
+    return String(s==null?"":s).replace(/[&<>"']/g, function(c){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+    });
+  }
   function formatMiles(n){ return n ? milesFmt.format(n) : ""; }
   function parseMiles(v){ var digits = String(v||"").replace(/\D/g,""); return digits ? parseInt(digits,10) : 0; }
   function attachMilesInput(input){
@@ -1141,12 +1151,16 @@
     var pctReal = hayPres ? (valor/presupuesto)*100 : 0;
     var pctBarra = hayPres ? Math.min(100, pctReal) : (valor > 0 ? 100 : 0);
     var estado = estadoPct(pctReal, hayPres);
-    var restante = presupuesto - valor;
+    // Redondeado al peso: sin esto, arrastres de coma flotante de fórmulas
+    // encadenadas (ej. las categorías compartidas usan "/2") podían mostrar
+    // "Te pasaste $0" en vez de "Justo en el presupuesto" (bug cosmético
+    // encontrado en la auditoría del 2026-08-30).
+    var restante = Math.round(presupuesto - valor);
 
     return '<div class="cat-row">' +
       '<div class="cat-row-top">' + catIcon(c.nombre, estado) +
         '<div class="cat-row-body">' +
-          '<div class="cat-top"><span class="cat-name">'+c.nombre+'</span>' +
+          '<div class="cat-top"><span class="cat-name">'+esc(c.nombre)+'</span>' +
           '<span class="cat-amount">'+money.format(valor)+'</span></div>' +
           (hayPres
             ? '<div class="cat-top"><span class="cat-sub">'+(c.tipo === "FIJO" ? "Gasto fijo" : "Gasto variable")+'</span>' +
@@ -1202,7 +1216,7 @@
       var mitad = valor / 2;
       return '<div class="cat-row"><div class="cat-row-top">' + catIcon(item.nombre) +
         '<div class="cat-row-body">' +
-        '<div class="cat-top"><span class="cat-name">'+item.nombre+'</span><span class="cat-amount">'+money.format(valor)+'</span></div>' +
+        '<div class="cat-top"><span class="cat-name">'+esc(item.nombre)+'</span><span class="cat-amount">'+money.format(valor)+'</span></div>' +
         '<div class="cat-top"><span class="cat-sub">50/50 con Pablo</span>' +
         '<span class="cat-of">tu mitad '+money.format(mitad)+'</span></div>' +
         '</div></div></div>';
@@ -1224,7 +1238,7 @@
   function populateDeudaPersonas(){
     var personas = (state.deudas && state.deudas.personas) || ["Pablo","Mamá","Papá","Lagi"];
     var actual = $("dPersona").value;
-    $("dPersona").innerHTML = personas.map(function(p){ return '<option value="'+p+'">'+p+'</option>'; }).join("") +
+    $("dPersona").innerHTML = personas.map(function(p){ return '<option value="'+esc(p)+'">'+esc(p)+'</option>'; }).join("") +
       '<option value="__OTRA__">+ Otra persona...</option>';
     if(personas.indexOf(actual) !== -1) $("dPersona").value = actual;
   }
@@ -1238,11 +1252,11 @@
       var saldo = Number(d.saldos[p]) || 0;
       var cls = saldo > 0 ? "pos" : (saldo < 0 ? "neg" : "");
       var label = saldo > 0 ? p+" te debe" : (saldo < 0 ? "Le debes a "+p : p+" al día");
-      return '<div class="person-card'+(deudaFiltroPersona===p?" active":"")+'" data-persona="'+p+'">'
-        + '<span class="person-avatar">'+p.charAt(0).toUpperCase()+'</span>'
+      return '<div class="person-card'+(deudaFiltroPersona===p?" active":"")+'" data-persona="'+esc(p)+'">'
+        + '<span class="person-avatar">'+esc(p.charAt(0).toUpperCase())+'</span>'
         + '<div class="person-body">'
         + '<div class="pv '+cls+'">'+money.format(Math.abs(saldo))+'</div>'
-        + '<div class="pl">'+label+'</div></div></div>';
+        + '<div class="pl">'+esc(label)+'</div></div></div>';
     }).join("");
 
     document.querySelectorAll("#deudasGrid .person-card").forEach(function(el){
@@ -1255,18 +1269,28 @@
     var movs = d.movimientos || [];
     if(deudaFiltroPersona) movs = movs.filter(function(m){ return m.persona === deudaFiltroPersona; });
 
+    // Solo las filas con un "tipo" reconocido (preste/mePagaron/debo/pague) se
+    // pueden editar — las dos filas de "Saldo inicial" migradas del Excel no
+    // tienen un tipo que mapear, así que quedan de solo lectura.
     $("deudasList").innerHTML = movs.map(function(m){
       var fecha = new Date(m.fecha);
       var fechaLabel = isNaN(fecha.getTime()) ? "" : fecha.toLocaleDateString("es-CL");
       var color = m.monto >= 0 ? "var(--green)" : "var(--red)";
       var signo = m.monto >= 0 ? "+" : "−";
-      return '<div class="mov-row">' + catIcon("DEUDAS") +
+      var editable = !!m.tipo;
+      return '<div class="mov-row'+(editable?"":' ')+'" data-fila="'+m.fila+'" style="'+(editable?"":"cursor:default;")+'">' + catIcon("DEUDAS") +
         '<div class="mov-body">' +
-        '<div class="mov-top"><span class="mov-name">'+m.persona+' · '+m.concepto+(m.detalle?' · '+m.detalle:'')+'</span>'+
+        '<div class="mov-top"><span class="mov-name">'+esc(m.persona)+' · '+esc(m.concepto)+(m.detalle?' · '+esc(m.detalle):'')+'</span>'+
         '<span class="mov-amount" style="color:'+color+'">'+signo+money.format(Math.abs(m.monto))+'</span></div>' +
         '<div class="mov-sub"><span class="pill">'+fechaLabel+'</span></div>' +
-        '</div></div>';
-    }).join("") || '<div class="empty-note">Sin movimientos'+(deudaFiltroPersona?' con '+deudaFiltroPersona:' de deudas todavía')+'.</div>';
+        '</div>'+(editable?'<span class="edit-chevron">✎</span>':'')+'</div>';
+    }).join("") || '<div class="empty-note">Sin movimientos'+(deudaFiltroPersona?' con '+esc(deudaFiltroPersona):' de deudas todavía')+'.</div>';
+
+    document.querySelectorAll("#deudasList .mov-row").forEach(function(row){
+      var m = movs.filter(function(x){ return x.fila === Number(row.dataset.fila); })[0];
+      if(!m || !m.tipo) return;
+      row.onclick = function(){ openDeudaSheet(m); };
+    });
   }
 
   // ====== Resumen compartido como imagen (para mandarle a Pablo) ======
@@ -1550,7 +1574,7 @@
         : "Sin presupuesto asignado";
       return '<div class="budget-bar-row">' +
         '<div class="budget-bar-top">' + catIcon(c.nombre) +
-        '<span class="budget-bar-name">'+c.nombre+(c.meta?' <span class="tag" style="font-size:9px;padding:1px 6px;">meta</span>':'')+'</span>' +
+        '<span class="budget-bar-name">'+esc(c.nombre)+(c.meta?' <span class="tag" style="font-size:9px;padding:1px 6px;">meta</span>':'')+'</span>' +
         '<span class="budget-bar-pct">'+pct.toFixed(1)+'%</span>' +
         '</div>' +
         '<div class="budget-bar-track"><div class="budget-bar-fill" style="width:'+widthPct.toFixed(1)+'%;background:'+color+'"></div></div>' +
@@ -1775,9 +1799,9 @@
       return '<div class="cat-row'+(esDelLedger?"":" saldo-row")+'" data-fila="'+c.fila+'"><div class="cat-row-top">' +
         catIcon(c.categoria) +
         '<div class="cat-row-body">' +
-        '<div class="cat-top"><span class="cat-name">'+c.cuenta+'</span>' +
+        '<div class="cat-top"><span class="cat-name">'+esc(c.cuenta)+'</span>' +
         '<span class="cat-amount" style="color:'+(esDeuda?"var(--red)":"var(--text)")+'">'+(esDeuda?"−":"")+money.format(c.propio)+'</span></div>' +
-        '<div class="cat-top"><span class="cat-sub">'+c.categoria+(compartida?' · '+c.pctPropio+'% tuyo':'')+(esDelLedger?' · desde Deudas':'')+'</span>' +
+        '<div class="cat-top"><span class="cat-sub">'+esc(c.categoria)+(compartida?' · '+c.pctPropio+'% tuyo':'')+(esDelLedger?' · desde Deudas':'')+'</span>' +
         (compartida ? '<span class="cat-of">de '+money.format(c.monto)+'</span>' : '') +
         '</div></div></div></div>';
     }).join("");
@@ -1933,9 +1957,9 @@
       }
 
       return '<div class="cat-row meta-row" data-fila="'+m.fila+'">' +
-        '<div class="cat-row-top">' + catIcon(m.origen || m.nombre) +
+        '<div class="cat-row-top">' + catIcon(m.tipo === "deuda" ? "DEUDAS" : (m.origen || m.nombre)) +
         '<div class="cat-row-body">' +
-        '<div class="cat-top"><span class="cat-name">'+m.nombre+'</span>' +
+        '<div class="cat-top"><span class="cat-name">'+esc(m.nombre)+'</span>' +
         '<span class="cat-amount">'+Math.min(999, pct).toFixed(0)+'%</span></div>' +
         '<div class="bar-track"><div class="bar-fill" style="width:'+Math.min(100,pct).toFixed(1)+'%;background:'+color+'"></div></div>' +
         '<div class="cat-sub" style="margin-top:6px;">'+sub+'</div>' +
@@ -2239,9 +2263,9 @@
     var personaActual = $("filtroPersona").value;
 
     $("filtroCategoria").innerHTML = '<option value="">Todas las categorías</option>' +
-      catsUsadas.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join("");
+      catsUsadas.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join("");
     $("filtroPersona").innerHTML = '<option value="">Todas las personas</option>' +
-      personasUsadas.map(function(p){ return '<option value="'+p+'">'+p+'</option>'; }).join("");
+      personasUsadas.map(function(p){ return '<option value="'+esc(p)+'">'+esc(p)+'</option>'; }).join("");
 
     $("filtroCategoria").value = catsUsadas.indexOf(catActual) !== -1 ? catActual : "";
     $("filtroPersona").value = personasUsadas.indexOf(personaActual) !== -1 ? personaActual : "";
@@ -2260,8 +2284,8 @@
     $("historialList").innerHTML = movs.map(function(m){
       return '<div class="mov-row" data-fila="'+m.fila+'">' + catIcon(m.categoria) +
         '<div class="mov-body">' +
-        '<div class="mov-top"><span class="mov-name">'+m.categoria+(m.detalle?' · '+m.detalle:'')+'</span><span class="mov-amount">'+money.format(m.valor)+'</span></div>' +
-        '<div class="mov-sub"><span class="pill">Día '+m.dia+'</span><span class="pill">'+m.persona+'</span>'+(m.banco?'<span class="pill">'+m.banco+'</span>':'')+'</div>' +
+        '<div class="mov-top"><span class="mov-name">'+esc(m.categoria)+(m.detalle?' · '+esc(m.detalle):'')+'</span><span class="mov-amount">'+money.format(m.valor)+'</span></div>' +
+        '<div class="mov-sub"><span class="pill">Día '+m.dia+'</span><span class="pill">'+esc(m.persona)+'</span>'+(m.banco?'<span class="pill">'+esc(m.banco)+'</span>':'')+'</div>' +
         '</div><span class="edit-chevron">✎</span></div>';
     }).join("") || '<div class="empty-note">No hay gastos registrados este período.</div>';
 
@@ -2339,14 +2363,14 @@
 
   function populateSelects(){
     var cats = (state.listas && state.listas.categorias) || [];
-    $("fCategoria").innerHTML = cats.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join("");
+    $("fCategoria").innerHTML = cats.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join("");
 
     var personas = (state.listas && state.listas.personas) || PERSONAS;
-    $("fPersona").innerHTML = personas.map(function(p){ return '<option value="'+p+'">'+p+'</option>'; }).join("");
+    $("fPersona").innerHTML = personas.map(function(p){ return '<option value="'+esc(p)+'">'+esc(p)+'</option>'; }).join("");
 
     var bancos = (state.listas && state.listas.bancos) || [];
     $("fBanco").innerHTML = '<option value="">Sin banco</option>' +
-      bancos.map(function(b){ return '<option value="'+b+'">'+b+'</option>'; }).join("") +
+      bancos.map(function(b){ return '<option value="'+esc(b)+'">'+esc(b)+'</option>'; }).join("") +
       '<option value="__OTRO__">+ Otro banco...</option>';
   }
 
@@ -2488,7 +2512,11 @@
         banco: getBancoValue(),
         cuota: $("fCuota").value || 1,
         valor: valor,
-        detalle: $("fDetalle").value || ""
+        detalle: $("fDetalle").value || "",
+        // Bug real (2026-08-30): el campo de fecha se mostraba editable pero
+        // nunca se mandaba al guardar, así que cambiar la fecha de un gasto
+        // existente no hacía nada, en silencio.
+        fecha: $("fFecha").value
       });
     } else {
       btn.textContent = "Guardando...";
@@ -2580,12 +2608,22 @@
 
   function opcionesOrigen(tipo){
     var cats = (state.listas && state.listas.categorias) || [];
+    // GANANCIAS y "Compra de casa" no son categorías de gasto normal (ver
+    // categoriasGasto): no tiene sentido "reducir" ni compararlas contra un
+    // tope mensual. Se excluyen de los dos tipos que sí filtran por gasto.
+    var catsGasto = cats.filter(function(c){ return c !== "GANANCIAS" && c !== "Compra de casa"; });
     if(tipo === "deuda"){
       return ((state.deudas && state.deudas.personas) || ["Pablo","Mamá","Papá","Lagi"]);
     }
     if(tipo === "acumular"){
-      // Lo que se puede "acumular": el ahorro y las categorías que suman hacia algo.
-      return ["AHORRO"].concat(cats.filter(function(c){ return c !== "GANANCIAS"; }));
+      // Lo que se puede "acumular" de verdad: el ahorro y "Compra de casa"
+      // (sí es un objetivo real, a diferencia de "reducir"). El resto de
+      // categorías de gasto no tiene sentido como meta de acumulación.
+      var extra = cats.indexOf("Compra de casa") !== -1 ? ["Compra de casa"] : [];
+      return ["AHORRO"].concat(extra);
+    }
+    if(tipo === "reducir"){
+      return catsGasto;
     }
     return cats;
   }
@@ -2602,7 +2640,7 @@
 
     var actual = $("mOrigen").value;
     var ops = opcionesOrigen(tipo);
-    $("mOrigen").innerHTML = ops.map(function(o){ return '<option value="'+o+'">'+o+'</option>'; }).join("");
+    $("mOrigen").innerHTML = ops.map(function(o){ return '<option value="'+esc(o)+'">'+esc(o)+'</option>'; }).join("");
     if(ops.indexOf(actual) !== -1) $("mOrigen").value = actual;
   }
 
@@ -2695,7 +2733,7 @@
 
     $("compartidaChips").innerHTML = cats.map(function(c){
       var activo = actuales.indexOf(String(c).trim().toUpperCase()) !== -1;
-      return '<button type="button" class="'+(activo?"active":"")+'" data-cat="'+c+'">'+c+'</button>';
+      return '<button type="button" class="'+(activo?"active":"")+'" data-cat="'+esc(c)+'">'+esc(c)+'</button>';
     }).join("") || '<div class="empty-note">No hay categorías creadas todavía.</div>';
 
     document.querySelectorAll('#compartidaChips button').forEach(function(btn){
@@ -2745,16 +2783,39 @@
     pague: "Anota que le pagaste una deuda: baja lo que le debes y además se registra como gasto en Movimientos (categoría \"Pago deudas\")."
   };
   var deudaTipoSeleccionado = "preste";
+  var deudaEditando = null;
 
-  function openDeudaSheet(){
+  // Sin argumento: nuevo movimiento. Con `mov` (de state.deudas.movimientos):
+  // edita esa fila — arreglo del 2026-08-30, antes solo se podía agregar.
+  function openDeudaSheet(mov){
+    deudaEditando = mov ? mov.fila : null;
     $("deudaForm").reset();
     populateDeudaPersonas();
     $("dPersonaOtra").style.display = "none";
     $("dPersonaOtra").value = "";
-    deudaTipoSeleccionado = "preste";
-    document.querySelectorAll('#deudaTipoTabs button').forEach(function(b){ b.classList.toggle("active", b.dataset.tipo==="preste"); });
-    $("deudaTipoHint").textContent = DEUDA_HINTS.preste;
-    $("dFecha").value = new Date().toISOString().slice(0,10);
+    deudaTipoSeleccionado = (mov && mov.tipo) || "preste";
+    document.querySelectorAll('#deudaTipoTabs button').forEach(function(b){ b.classList.toggle("active", b.dataset.tipo===deudaTipoSeleccionado); });
+    $("deudaTipoHint").textContent = DEUDA_HINTS[deudaTipoSeleccionado] || "";
+    $("deudaSheetTitle").textContent = mov ? "Editar movimiento" : "Movimiento de deuda";
+    $("deudaSubmitBtn").textContent = mov ? "Guardar cambios" : "Guardar";
+    $("deudaDeleteBtn").style.display = mov ? "block" : "none";
+
+    if(mov){
+      var opciones = Array.from($("dPersona").options).map(function(o){ return o.value; });
+      if(opciones.indexOf(mov.persona) !== -1){
+        $("dPersona").value = mov.persona;
+      } else {
+        $("dPersona").value = "__OTRA__";
+        $("dPersonaOtra").style.display = "block";
+        $("dPersonaOtra").value = mov.persona;
+      }
+      $("dMonto").value = formatMiles(Math.abs(Math.round(mov.monto)));
+      var fecha = new Date(mov.fecha);
+      $("dFecha").value = isNaN(fecha.getTime()) ? new Date().toISOString().slice(0,10) : fecha.toISOString().slice(0,10);
+      $("dDetalle").value = mov.detalle || "";
+    } else {
+      $("dFecha").value = new Date().toISOString().slice(0,10);
+    }
     $("deudaBackdrop").classList.add("show");
     $("deudaSheet").classList.add("show");
   }
@@ -2762,7 +2823,7 @@
     $("deudaBackdrop").classList.remove("show");
     $("deudaSheet").classList.remove("show");
   }
-  $("addDeudaBtn").onclick = openDeudaSheet;
+  $("addDeudaBtn").onclick = function(){ openDeudaSheet(null); };
   $("closeDeudaSheet").onclick = closeDeudaSheet;
   $("deudaBackdrop").onclick = closeDeudaSheet;
   attachMilesInput($("dMonto"));
@@ -2789,7 +2850,8 @@
     btn.disabled = true;
     btn.textContent = "Guardando...";
     apiPost({
-      accion: "movimientoDeuda",
+      accion: deudaEditando ? "editarMovimientoDeuda" : "movimientoDeuda",
+      fila: deudaEditando,
       persona: persona,
       tipo: deudaTipoSeleccionado,
       monto: monto,
@@ -2809,9 +2871,29 @@
       showToast("Error: " + err.message, "err");
     }).finally(function(){
       btn.disabled = false;
-      btn.textContent = "Guardar";
+      btn.textContent = deudaEditando ? "Guardar cambios" : "Guardar";
     });
   });
+
+  $("deudaDeleteBtn").onclick = function(){
+    if(!deudaEditando) return;
+    if(!confirm('¿Eliminar este movimiento de deuda? No se puede deshacer.\n\nOjo: si era un "Le pagué", esto NO borra el gasto que se haya creado en Movimientos — hay que borrarlo aparte en Historial si corresponde.')) return;
+    var btn = $("deudaDeleteBtn");
+    btn.disabled = true;
+    btn.textContent = "Eliminando...";
+    apiPost({ accion: "eliminarMovimientoDeuda", fila: deudaEditando })
+      .then(function(json){
+        if(!json.ok) throw new Error(json.error || "Error desconocido");
+        showToast("Movimiento eliminado ✓", "ok");
+        closeDeudaSheet();
+        loadDeudas();
+      })
+      .catch(function(err){ showToast("Error: " + err.message, "err"); })
+      .finally(function(){
+        btn.disabled = false;
+        btn.textContent = "Eliminar este movimiento";
+      });
+  };
 
   // ====== Presupuesto por categoría (editable por mes) ======
   var presupuestoState = { categorias: [], categoriaActual: null };
