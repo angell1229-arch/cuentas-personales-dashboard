@@ -814,6 +814,7 @@
         <button type="button" data-cat="Inversión">Inversión</button>
         <button type="button" data-cat="Propiedad">Propiedad</button>
         <button type="button" data-cat="Vehículo">Vehículo</button>
+        <button type="button" data-cat="Préstamo">Préstamo</button>
         <button type="button" data-cat="Deuda">Deuda</button>
       </div>
       <div class="type-hint" id="saldoCatHint"></div>
@@ -978,6 +979,7 @@
     'INVERSION':'<path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>',
     'PROPIEDAD':'<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>',
     'VEHICULO':'<path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2"/><circle cx="7" cy="17" r="2"/><path d="M9 17h6"/><circle cx="17" cy="17" r="2"/>',
+    'PRESTAMO':'<path d="M17 8c0-2.2-2.2-4-5-4S7 5.8 7 8s2.2 4 5 4 5 1.8 5 4-2.2 4-5 4-5-1.8-5-4"/><path d="M12 2v2M12 20v2"/>',
     'DEUDA':'<rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/><path d="M6 12h.01M18 12h.01"/>',
     '_DEFAULT':'<path d="M20.6 13.4 12 22l-9-9V4a1 1 0 0 1 1-1h9l7.6 7.6a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.2" fill="currentColor" stroke="none"/>'
   };
@@ -1714,6 +1716,7 @@
     "Inversión": "Acciones, fondos mutuos, depósitos a plazo.",
     "Propiedad": "Casas o departamentos, al valor de mercado o de compra.",
     "Vehículo": "Autos, motos: un valor de referencia (Yapo/Chileautos) sirve.",
+    "Préstamo": "Plata que te deben (fuera del ledger de Pablo/Mamá/Papá/Lagi, que ya se suma solo). Cuenta como tuya, pero no es líquida.",
     "Deuda": "Créditos pendientes: hipotecario, de consumo, tarjetas. Se resta sola del patrimonio."
   };
 
@@ -1765,12 +1768,16 @@
     $("saldosList").innerHTML = s.cuentas.map(function(c){
       var esDeuda = c.categoria === "Deuda";
       var compartida = c.pctPropio < 100;
-      return '<div class="cat-row saldo-row" data-fila="'+c.fila+'"><div class="cat-row-top">' +
+      // Las cuentas sin `fila` vienen del ledger de Pablo/Mamá/Papá/Lagi (ver
+      // obtenerSaldos en Code.gs): se muestran acá pero se editan desde la
+      // pestaña Compartidos → Deudas personales, no desde este formulario.
+      var esDelLedger = c.fila === null;
+      return '<div class="cat-row'+(esDelLedger?"":" saldo-row")+'" data-fila="'+c.fila+'"><div class="cat-row-top">' +
         catIcon(c.categoria) +
         '<div class="cat-row-body">' +
         '<div class="cat-top"><span class="cat-name">'+c.cuenta+'</span>' +
         '<span class="cat-amount" style="color:'+(esDeuda?"var(--red)":"var(--text)")+'">'+(esDeuda?"−":"")+money.format(c.propio)+'</span></div>' +
-        '<div class="cat-top"><span class="cat-sub">'+c.categoria+(compartida?' · '+c.pctPropio+'% tuyo':'')+'</span>' +
+        '<div class="cat-top"><span class="cat-sub">'+c.categoria+(compartida?' · '+c.pctPropio+'% tuyo':'')+(esDelLedger?' · desde Deudas':'')+'</span>' +
         (compartida ? '<span class="cat-of">de '+money.format(c.monto)+'</span>' : '') +
         '</div></div></div></div>';
     }).join("");
@@ -1780,7 +1787,7 @@
     });
   }
 
-  var CATEGORIAS_SALDO_CACHE = ["Efectivo","Inversión","Propiedad","Vehículo","Deuda"];
+  var CATEGORIAS_SALDO_CACHE = ["Efectivo","Inversión","Propiedad","Vehículo","Préstamo","Deuda"];
   var saldoCategoria = "Efectivo";
   var saldoEditando = null;
   attachMilesInput($("sMonto"));
