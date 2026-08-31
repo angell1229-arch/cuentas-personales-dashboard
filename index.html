@@ -2870,7 +2870,11 @@
       showToast("Movimiento guardado ✓", "ok");
       closeDeudaSheet();
       loadDeudas();
-      if(deudaTipoSeleccionado === "pague"){
+      if(deudaTipoSeleccionado === "pague" || deudaTipoSeleccionado === "mePagaron"){
+        // Ambos tipos también escriben una fila en Movimientos (gasto o
+        // ganancia), así que hay que refrescar lo mismo que refresca un
+        // gasto nuevo — si no, el Resumen/Historial se ven desactualizados
+        // hasta el próximo cambio de pestaña.
         loadListas();
         loadData(true);
         if(currentView === "viewHistorial") loadMovimientos();
