@@ -1222,11 +1222,19 @@
     $("compartidosDetalle").innerHTML = detalle.map(function(item){
       var valor = anual ? item.totalAnual : item.valorMes;
       var mitad = valor / 2;
+      var pagoPablo = Number(anual ? item.pagadoPabloAnual : item.pagadoPablo) || 0;
+      // Si Pablo pagó parte (o todo) de esta categoría, se muestra diferenciado
+      // acá mismo: qué ítem fue y cuánto puso él (pedido por Angel 2026-09-01).
+      var pabloLine = pagoPablo > 0
+        ? '<div class="cat-top"><span class="cat-sub" style="color:var(--mint)">Pagó Pablo</span>' +
+          '<span class="cat-of" style="color:var(--mint)">'+money.format(pagoPablo)+'</span></div>'
+        : '';
       return '<div class="cat-row"><div class="cat-row-top">' + catIcon(item.nombre) +
         '<div class="cat-row-body">' +
         '<div class="cat-top"><span class="cat-name">'+esc(item.nombre)+'</span><span class="cat-amount">'+money.format(valor)+'</span></div>' +
         '<div class="cat-top"><span class="cat-sub">50/50 con Pablo</span>' +
         '<span class="cat-of">tu mitad '+money.format(mitad)+'</span></div>' +
+        pabloLine +
         '</div></div></div>';
     }).join("") || '<div class="empty-note">Sin gastos compartidos este período.</div>';
   }
@@ -1326,7 +1334,8 @@
     var detalle = (d.compartidos.detalle || []).map(function(item){
       return {
         nombre: item.nombre,
-        valor: Number(anual ? item.totalAnual : item.valorMes) || 0
+        valor: Number(anual ? item.totalAnual : item.valorMes) || 0,
+        pagadoPablo: Number(anual ? item.pagadoPabloAnual : item.pagadoPablo) || 0
       };
     }).filter(function(i){ return i.valor > 0; });
 
@@ -1353,9 +1362,13 @@
               dim:"#5c6f74", borde:"#dbe6e8", suave:"#f2f7f8", rojo:"#c94430" };
 
     var W = 760, padX = 44, escala = 2; // 1520px de ancho: nítido en celular sin pesar de más
-    var headerH = 142, gapHeader = 34, thH = 34, rowH = 44, gapTabla = 26;
+    var headerH = 142, gapHeader = 34, thH = 34, rowH = 44, rowHPablo = 22, gapTabla = 26;
     var totalesH = 96, pagosH = 100, balanceH = 136, footerH = 76;
-    var H = headerH + gapHeader + thH + info.detalle.length*rowH + gapTabla +
+    // Las filas donde Pablo pagó parte de la categoría necesitan una línea extra
+    // (pedido por Angel 2026-09-01: que quede diferenciado en qué ítem pagó él).
+    function alturaFila(item){ return item.pagadoPablo > 0 ? rowH + rowHPablo : rowH; }
+    var alturaFilas = info.detalle.reduce(function(acc, item){ return acc + alturaFila(item); }, 0);
+    var H = headerH + gapHeader + thH + alturaFilas + gapTabla +
             totalesH + pagosH + balanceH + footerH;
 
     var canvas = document.createElement("canvas");
@@ -1400,16 +1413,20 @@
 
     // Filas
     info.detalle.forEach(function(item, i){
+      var rh = alturaFila(item);
       var cy = y + rowH/2 + 6;
       if(i % 2 === 0){
         ctx.fillStyle = C.suave;
-        roundRect(ctx, padX - 14, y + 2, W - (padX-14)*2, rowH - 4, 8);
+        roundRect(ctx, padX - 14, y + 2, W - (padX-14)*2, rh - 4, 8);
         ctx.fill();
       }
       texto(item.nombre, padX, cy, C.texto, 18, 600);
       texto(money.format(item.valor), W - padX - 170, cy, C.texto, 18, 700, "right");
       texto(money.format(item.valor/2), W - padX, cy, C.dim, 17, 500, "right");
-      y += rowH;
+      if(item.pagadoPablo > 0){
+        texto("Pagó Pablo: " + money.format(item.pagadoPablo), padX, cy + 22, C.mint, 14, 600);
+      }
+      y += rh;
     });
 
     y += gapTabla;
