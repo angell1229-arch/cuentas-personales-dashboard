@@ -1196,20 +1196,29 @@
     var anual = state.mode === "anual";
     var ct = anual ? d.compartidos.totalAnual : d.compartidos.total;
     var ce = anual ? d.compartidos.entre2Anual : d.compartidos.entre2;
-    var balance = anual ? d.compartidos.balanceAnual : d.compartidos.balance;
     var pagadoPablo = anual ? d.compartidos.pagadoPabloAnual : d.compartidos.pagadoPablo;
+    var deudaBci = Number((d.compartidos.deudaBci && (anual ? d.compartidos.deudaBci.anual : d.compartidos.deudaBci.mes)) || 0);
+    // Balance final: gastos comunes 50/50 MENOS la cuota BCI completa de Angel
+    // a Pablo (no es un gasto compartido, es un préstamo personal — se resta
+    // completa, no a la mitad, para no tener que hacer dos transferencias
+    // separadas cada mes; pedido por Angel 2026-09-01). Si el backend todavía
+    // no manda balanceNeto (versión vieja cacheada), cae de vuelta al balance normal.
+    var balance = anual
+      ? (d.compartidos.balanceNetoAnual !== undefined ? d.compartidos.balanceNetoAnual : d.compartidos.balanceAnual)
+      : (d.compartidos.balanceNeto !== undefined ? d.compartidos.balanceNeto : d.compartidos.balance);
 
     var balanceLabel = balance >= 0 ? "Pablo te debe" : "Le debes a Pablo";
     var balanceCls = balance >= 0 ? "pos" : "neg";
 
-    var pagadoPropio = balance * 2 + pagadoPablo;
+    var pagadoPropio = (anual ? d.compartidos.balanceAnual : d.compartidos.balance) * 2 + pagadoPablo;
 
+    var notaDeuda = deudaBci > 0 ? ' Se descontó '+money.format(deudaBci)+' de la cuota BCI que le debes.' : '';
     $("balanceNote").innerHTML =
       '<div class="balance-card">' +
         '<div class="who">Balance de la casa · '+(anual ? state.year : MESES_LABEL[state.monthIdx])+'</div>' +
         '<div class="amt '+balanceCls+'">'+balanceLabel+' '+money.format(Math.abs(balance))+'</div>' +
         '<div class="note">De '+money.format(ct)+' en gastos comunes, tu mitad son '+money.format(ce)+
-          ' y Pablo pagó '+money.format(pagadoPablo)+'.</div>' +
+          ' y Pablo pagó '+money.format(pagadoPablo)+'.'+notaDeuda+'</div>' +
       '</div>';
 
     $("compartidosStats").innerHTML =
@@ -1219,7 +1228,7 @@
       statCard("Pagó Pablo", money.format(pagadoPablo));
 
     var detalle = d.compartidos.detalle || [];
-    $("compartidosDetalle").innerHTML = detalle.map(function(item){
+    var filasDetalle = detalle.map(function(item){
       var valor = anual ? item.totalAnual : item.valorMes;
       var mitad = valor / 2;
       // El mismo criterio 50/50 que "tu mitad": lo que se muestra es la mitad
@@ -1239,7 +1248,23 @@
         '<span class="cat-of">tu mitad '+money.format(mitad)+'</span></div>' +
         pabloLine +
         '</div></div></div>';
-    }).join("") || '<div class="empty-note">Sin gastos compartidos este período.</div>';
+    });
+
+    // DEUDA BCI no es un gasto compartido 50/50 (es un préstamo personal a
+    // Pablo que Angel sigue anotando como gasto normal) — se muestra aparte,
+    // con el monto completo descontado, no la mitad (pedido 2026-09-01).
+    if(deudaBci > 0){
+      filasDetalle.push(
+        '<div class="cat-row"><div class="cat-row-top">' + catIcon("DEUDA BCI") +
+        '<div class="cat-row-body">' +
+        '<div class="cat-top"><span class="cat-name">DEUDA BCI</span><span class="cat-amount" style="color:var(--red)">−'+money.format(deudaBci)+'</span></div>' +
+        '<div class="cat-top"><span class="cat-sub">Cuota mensual que le debes a Pablo</span>' +
+        '<span class="cat-of">se resta completa del balance</span></div>' +
+        '</div></div></div>'
+      );
+    }
+
+    $("compartidosDetalle").innerHTML = filasDetalle.join("") || '<div class="empty-note">Sin gastos compartidos este período.</div>';
   }
 
   // ====== Deudas personales (Pablo/Mamá/Papá/Lagi) — ledger aparte de lo compartido ======
@@ -1346,12 +1371,16 @@
 
     var balance = Number(anual ? d.compartidos.balanceAnual : d.compartidos.balance) || 0;
     var pagadoPablo = Number(anual ? d.compartidos.pagadoPabloAnual : d.compartidos.pagadoPablo) || 0;
+    var deudaBci = Number((d.compartidos.deudaBci && (anual ? d.compartidos.deudaBci.anual : d.compartidos.deudaBci.mes)) || 0);
+    var balanceNetoRaw = anual ? d.compartidos.balanceNetoAnual : d.compartidos.balanceNeto;
+    var balanceNeto = balanceNetoRaw !== undefined ? Number(balanceNetoRaw) || 0 : balance - deudaBci;
 
     return {
       detalle: detalle,
       total: Number(anual ? d.compartidos.totalAnual : d.compartidos.total) || 0,
       mitad: Number(anual ? d.compartidos.entre2Anual : d.compartidos.entre2) || 0,
-      balance: balance,
+      balance: balanceNeto,
+      deudaBci: deudaBci,
       pagadoPablo: pagadoPablo,
       // El backend entrega el balance ya dividido: balance = (propio - pablo) / 2
       pagadoPropio: balance * 2 + pagadoPablo,
@@ -1368,11 +1397,14 @@
 
     var W = 760, padX = 44, escala = 2; // 1520px de ancho: nítido en celular sin pesar de más
     var headerH = 142, gapHeader = 34, thH = 34, rowH = 44, rowHPablo = 22, gapTabla = 26;
-    var totalesH = 96, pagosH = 100, balanceH = 136, footerH = 76;
+    var totalesH = 96, balanceH = 136, footerH = 76;
     // Las filas donde Pablo pagó parte de la categoría necesitan una línea extra
     // (pedido por Angel 2026-09-01: que quede diferenciado en qué ítem pagó él).
     function alturaFila(item){ return item.pagadoPablo > 0 ? rowH + rowHPablo : rowH; }
     var alturaFilas = info.detalle.reduce(function(acc, item){ return acc + alturaFila(item); }, 0);
+    // Línea extra para la cuota BCI (no es 50/50, se resta completa del balance
+    // final — pedido por Angel 2026-09-01).
+    var pagosH = info.deudaBci > 0 ? 132 : 100;
     var H = headerH + gapHeader + thH + alturaFilas + gapTabla +
             totalesH + pagosH + balanceH + footerH;
 
@@ -1451,6 +1483,10 @@
     texto(money.format(info.pagadoPropio), W - padX, y + 48, C.texto, 19, 700, "right");
     texto("Pagó Pablo", padX, y + 80, C.texto, 18, 600);
     texto(money.format(info.pagadoPablo), W - padX, y + 80, C.texto, 19, 700, "right");
+    if(info.deudaBci > 0){
+      texto("Cuota BCI que Angel le debe a Pablo", padX, y + 112, C.dim, 15, 600);
+      texto("−" + money.format(info.deudaBci), W - padX, y + 112, C.rojo, 18, 700, "right");
+    }
     y += pagosH;
 
     // Balance final
