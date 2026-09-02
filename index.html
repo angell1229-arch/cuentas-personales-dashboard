@@ -1222,7 +1222,10 @@
     $("compartidosDetalle").innerHTML = detalle.map(function(item){
       var valor = anual ? item.totalAnual : item.valorMes;
       var mitad = valor / 2;
-      var pagoPablo = Number(anual ? item.pagadoPabloAnual : item.pagadoPablo) || 0;
+      // El mismo criterio 50/50 que "tu mitad": lo que se muestra es la mitad
+      // de lo que Pablo puso, no el monto total (pedido por Angel 2026-09-01,
+      // corrigiendo la primera versión que mostraba el monto completo).
+      var pagoPablo = (Number(anual ? item.pagadoPabloAnual : item.pagadoPablo) || 0) / 2;
       // Si Pablo pagó parte (o todo) de esta categoría, se muestra diferenciado
       // acá mismo: qué ítem fue y cuánto puso él (pedido por Angel 2026-09-01).
       var pabloLine = pagoPablo > 0
@@ -1335,7 +1338,9 @@
       return {
         nombre: item.nombre,
         valor: Number(anual ? item.totalAnual : item.valorMes) || 0,
-        pagadoPablo: Number(anual ? item.pagadoPabloAnual : item.pagadoPablo) || 0
+        // Mismo criterio 50/50 que "mitad c/u": se muestra la mitad de lo que
+        // puso Pablo, no el monto total (pedido por Angel 2026-09-01).
+        pagadoPablo: (Number(anual ? item.pagadoPabloAnual : item.pagadoPablo) || 0) / 2
       };
     }).filter(function(i){ return i.valor > 0; });
 
