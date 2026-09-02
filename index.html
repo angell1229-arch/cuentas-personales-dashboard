@@ -539,8 +539,6 @@
     .budget-card-grid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));}
 
     .resumen-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;align-items:start;}
-    .cat-columns{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
-    .cat-columns .card{height:100%;}
 
     .sheet{
       left:50%;top:50%;bottom:auto;transform:translate(-50%,-50%) scale(.95);
@@ -593,16 +591,10 @@
       <div class="card" style="padding:10px 16px;" id="tendenciaCard"></div>
 
       <div class="section-title">Categorías <button class="link-btn" id="addCatBtn">+ Nueva categoría</button></div>
-      <div class="cat-columns">
-        <div class="card">
-          <div class="cat-group-title">Gastos fijos</div>
-          <div id="catFijos"></div>
-        </div>
-        <div class="card">
-          <div class="cat-group-title">Gastos variables</div>
-          <div id="catVariables"></div>
-        </div>
-      </div>
+      <div class="cat-group-title">Gastos fijos</div>
+      <div class="budget-card-grid" id="catFijos"></div>
+      <div class="cat-group-title">Gastos variables</div>
+      <div class="budget-card-grid" id="catVariables"></div>
 
       <div class="section-title">Compra de casa <span class="tag">aparte del gasto normal</span></div>
       <div class="card"><div id="compraCasaCard"></div></div>
@@ -1135,8 +1127,8 @@
     var fijos = visibles.filter(function(c){ return c.tipo === "FIJO"; });
     var variables = visibles.filter(function(c){ return c.tipo !== "FIJO"; });
 
-    $("catFijos").innerHTML = fijos.map(function(c){ return catRow(c, anual); }).join("") || '<div class="empty-note">Sin categorías fijas.</div>';
-    $("catVariables").innerHTML = variables.map(function(c){ return catRow(c, anual); }).join("") || '<div class="empty-note">Sin categorías variables.</div>';
+    $("catFijos").innerHTML = fijos.map(function(c){ return catCard(c, anual); }).join("") || '<div class="empty-note">Sin categorías fijas.</div>';
+    $("catVariables").innerHTML = variables.map(function(c){ return catCard(c, anual); }).join("") || '<div class="empty-note">Sin categorías variables.</div>';
 
     var compraCasa = d.categorias.find(function(c){ return c.nombre === "Compra de casa"; });
     if(compraCasa){
@@ -1152,7 +1144,7 @@
     }
   }
 
-  function catRow(c, anual){
+  function catCard(c, anual){
     var valor = anual ? c.totalAnual : c.valorMes;
     var presupuesto = anual ? c.presupuestoAnual : c.presupuestoMensual;
     var hayPres = presupuesto > 0;
@@ -1165,28 +1157,22 @@
     // encontrado en la auditoría del 2026-08-30).
     var restante = Math.round(presupuesto - valor);
 
-    return '<div class="cat-row">' +
-      '<div class="cat-row-top">' + catIcon(c.nombre, estado) +
-        '<div class="cat-row-body">' +
-          '<div class="cat-top"><span class="cat-name">'+esc(c.nombre)+'</span>' +
-          '<span class="cat-amount">'+money.format(valor)+'</span></div>' +
-          (hayPres
-            ? '<div class="cat-top"><span class="cat-sub">'+(c.tipo === "FIJO" ? "Gasto fijo" : "Gasto variable")+'</span>' +
-              '<span class="cat-of">de '+money.format(presupuesto)+'</span></div>'
-            : '<div class="cat-sub">Sin presupuesto asignado</div>') +
-        '</div>' +
+    var sub = hayPres
+      ? (restante > 0
+          ? 'Te queda '+money.format(restante)
+          : (restante === 0
+              ? 'Justo en el presupuesto'
+              : '<span class="over">Te pasaste '+money.format(-restante)+'</span>'))
+      : 'Sin presupuesto asignado';
+
+    return '<div class="budget-card">' +
+      '<div class="budget-bar-top">' + catIcon(c.nombre, (estado ? estado+' ' : '')+'sm') +
+      '<span class="budget-bar-name">'+esc(c.nombre)+'</span>' +
+      '<span class="budget-bar-pct">'+(hayPres ? pctReal.toFixed(0)+'%' : money.format(valor))+'</span>' +
       '</div>' +
-      (hayPres
-        ? '<div class="bar-track"><div class="bar-fill '+estado+'" style="width:'+pctBarra+'%"></div></div>' +
-          '<div class="cat-foot">' +
-            (restante > 0
-              ? '<span>Te queda '+money.format(restante)+'</span>'
-              : (restante === 0
-                  ? '<span>Justo en el presupuesto</span>'
-                  : '<span class="over">Te pasaste '+money.format(-restante)+'</span>')) +
-            '<span>'+pctReal.toFixed(0)+'%</span>' +
-          '</div>'
-        : '') +
+      (hayPres ? '<div class="budget-bar-track"><div class="budget-bar-fill" style="width:'+pctBarra+'%;background:'+colorEstado(estado)+'"></div></div>' : '') +
+      '<div class="cat-sub">'+sub+'</div>' +
+      (hayPres ? '<div class="cat-of" style="margin-top:2px;">'+money.format(valor)+' de '+money.format(presupuesto)+'</div>' : '') +
     '</div>';
   }
 
