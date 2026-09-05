@@ -636,6 +636,9 @@
       <div class="stat-scroll" id="ahorroStats"></div>
       <div class="kpi-note" id="ahorroNote"></div>
 
+      <div class="section-title">Ingresos mes a mes <span class="tag" id="ingresosAnioTag"></span></div>
+      <div class="card" style="padding:10px 16px;" id="ingresosMeses"></div>
+
       <div class="section-title">Ahorro mes a mes <span class="tag" id="ahorroAnioTag"></span></div>
       <div class="card" style="padding:10px 16px;" id="ahorroMeses"></div>
 
@@ -1764,6 +1767,7 @@
     }
     $("ahorroNote").innerHTML = nota;
 
+    renderIngresosMeses();
     renderAhorroMeses();
     renderHistoricoAnios();
   }
@@ -2052,6 +2056,34 @@
       '<div class="mini-months">' + barras + '</div>' +
       '<div class="mini-labels">' + MESES_LABEL.map(function(m){ return '<span>'+m.slice(0,1)+'</span>'; }).join("") + '</div>' +
       '<div class="cat-sub">Promedio '+money.format(prom)+'/mes · acumulado '+money.format(acum)+comparacion+'</div>';
+  }
+
+  // Mini gráfico de barras de los 12 meses del año seleccionado (sueldo + ganancias).
+  function renderIngresosMeses(){
+    var hist = state.historico || [];
+    var anioActual = hist.find(function(a){ return a.anio === state.year; });
+    $("ingresosAnioTag").textContent = String(state.year);
+
+    if(!anioActual || !anioActual.sueldoMeses){
+      $("ingresosMeses").innerHTML = '<div class="empty-note">Sin datos de ingresos para '+state.year+'.</div>';
+      return;
+    }
+    var sueldo = anioActual.sueldoMeses;
+    var ganancias = anioActual.gananciasMeses || sueldo.map(function(){ return 0; });
+    var meses = sueldo.map(function(v, i){ return (Number(v)||0) + (Number(ganancias[i])||0); });
+    var max = Math.max.apply(null, meses.concat([1]));
+
+    $("ingresosMeses").innerHTML =
+      '<div class="mini-months">' + meses.map(function(v, i){
+        var h = Math.max(2, (v / max) * 100);
+        var detalle = money.format(sueldo[i]||0) + ' sueldo';
+        if(ganancias[i] > 0) detalle += ' + ' + money.format(ganancias[i]) + ' ganancias';
+        return '<div class="mm'+(v>0?' has':'')+'" style="height:'+h+'%" title="'+MESES_LABEL[i]+': '+detalle+'"></div>';
+      }).join("") + '</div>' +
+      '<div class="mini-labels">' + MESES_LABEL.map(function(m){
+        return '<span>'+m.slice(0,1)+'</span>';
+      }).join("") + '</div>' +
+      '<div class="cat-sub">Mejor mes: '+money.format(max)+' · Total '+state.year+': '+money.format(meses.reduce(function(a,b){return a+b;},0))+'</div>';
   }
 
   // Mini gráfico de barras de los 12 meses del año seleccionado.
