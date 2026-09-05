@@ -447,17 +447,6 @@
   .mini-months .mm.fut{background:var(--amber);opacity:.42;}
   .mini-months .mm.now{box-shadow:0 0 0 2px var(--accent);}
 
-  /* Indicadores: un número solo no dice nada, así que cada fila lleva su
-     explicación en texto. La barra es opcional (solo para los que son un %). */
-  .ind-row{padding:13px 0;border-bottom:1px solid var(--border);}
-  .ind-row:last-child{border-bottom:none;}
-  .ind-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
-  .ind-name{font-size:14px;font-weight:700;color:var(--text);}
-  .ind-value{font-size:17px;font-weight:800;white-space:nowrap;}
-  .ind-note{font-size:12.5px;color:var(--text-dim);line-height:1.45;margin-top:5px;}
-  .ind-bar{height:7px;border-radius:6px;background:var(--surface-2);overflow:hidden;margin-top:9px;}
-  .ind-bar span{display:block;height:100%;border-radius:6px;}
-
   .presu-total-display{
     background:var(--surface-2);border-radius:14px;padding:14px 16px;margin:2px 0 4px;
     display:flex;flex-direction:column;align-items:center;text-align:center;
@@ -583,9 +572,6 @@
       <div class="stat-scroll" id="statScroll">
         <div class="stat-card"><div class="label">Gasto</div><div class="value skeleton" style="height:20px;width:70%">&nbsp;</div></div>
       </div>
-
-      <div class="section-title">Indicadores <span class="tag">cómo vas</span></div>
-      <div class="card" id="indicadoresCard"></div>
 
       <div class="section-title">Gasto mes a mes <span class="tag" id="tendenciaTag"></span></div>
       <div class="card" style="padding:10px 16px;" id="tendenciaCard"></div>
@@ -1117,9 +1103,8 @@
     renderPresupuestoStats();
     renderPresupuestoBars();
     renderAhorro();
-    renderIndicadores();
     renderTendencia();
-    // Los indicadores y la tendencia necesitan el histórico (gasto mes a mes).
+    // La tendencia necesita el histórico (gasto mes a mes).
     // loadHistorico() cachea, así que esto es barato salvo la primera vez.
     loadHistorico();
 
@@ -2023,123 +2008,6 @@
     });
   }
 
-  // ====== Indicadores ======
-  // Todos salen de datos que ya existen (no hay que capturar nada nuevo). Cada
-  // uno lleva su explicación al lado: un porcentaje suelto no le sirve a nadie.
-  var REF_FIJOS = 50; // % del ingreso comprometido en gastos fijos: bajo 50% se considera holgado
-
-  // El sueldo del mes en curso puede no estar anotado todavía (Angel lo registra
-  // cuando lo recibe). En vez de dividir por cero y mostrar indicadores rotos, se
-  // estima con el promedio de los meses del año que sí lo tienen, avisándolo.
-  function ingresoBase(anual){
-    var d = state.data;
-    var directo = (Number(anual ? d.sueldoAnual : d.sueldo) || 0) +
-                  (Number(anual ? d.gananciasAnual : d.ganancias) || 0);
-    if(directo > 0) return { valor: directo, estimado: false };
-
-    var h = (state.historico || []).filter(function(a){ return a.anio === state.year; })[0];
-    var conSueldo = (h && h.sueldoMeses) ? h.sueldoMeses.filter(function(v){ return v > 0; }) : [];
-    if(!conSueldo.length) return { valor: 0, estimado: false };
-    var prom = conSueldo.reduce(function(a,b){ return a+b; }, 0) / conSueldo.length;
-    return { valor: anual ? prom * 12 : prom, estimado: true };
-  }
-
-  function indRow(o){
-    var barra = (o.pct == null) ? "" :
-      '<div class="ind-bar"><span style="width:'+Math.min(100, Math.max(0, o.pct))+'%;background:'+o.color+'"></span></div>';
-    return '<div class="ind-row">' +
-      '<div class="ind-head"><span class="ind-name">'+o.nombre+'</span>' +
-      '<span class="ind-value" style="color:'+(o.valorColor || "var(--text)")+'">'+o.valor+'</span></div>' +
-      barra + '<div class="ind-note">'+o.nota+'</div></div>';
-  }
-
-  function renderIndicadores(){
-    var d = state.data;
-    if(!d) return;
-    var anual = esAnual();
-    var gasto = Number(anual ? d.subTotalAnual : d.subTotal) || 0;
-    var ahorro = Number(anual ? d.ahorroAnual : d.ahorro) || 0;
-    var base = ingresoBase(anual);
-    var visibles = categoriasGasto(d);
-    var notaEstimado = base.estimado ? " Ingreso estimado con el promedio del año, porque este período aún no tiene sueldo anotado." : "";
-    var filas = [];
-
-    // 1. Cuánto de lo que entra ya está comprometido antes de decidir nada.
-    var fijos = sumaCampo(visibles.filter(function(c){ return c.tipo === "FIJO"; }), "totalAnual", "valorMes", anual);
-    if(base.valor > 0){
-      var pctFijos = pctSeguro(fijos, base.valor);
-      var estF = pctFijos < REF_FIJOS ? "ok" : (pctFijos < 65 ? "warn" : "over");
-      filas.push(indRow({
-        nombre: "Gastos fijos comprometidos",
-        valor: pctFijos.toFixed(0) + "%",
-        valorColor: colorEstado(estF), pct: pctFijos, color: colorEstado(estF),
-        nota: money.format(fijos)+" de "+money.format(base.valor)+" se van en gastos fijos antes de que decidas nada. "+
-              "Bajo "+REF_FIJOS+"% se considera holgado."+notaEstimado
-      }));
-    }
-
-    // 2. Proyección de fin de mes: solo tiene sentido en el mes que está corriendo.
-    var hoy = new Date();
-    var enCurso = !anual && state.year === hoy.getFullYear() && state.monthIdx === hoy.getMonth();
-    if(enCurso && gasto > 0){
-      var diasMes = new Date(state.year, state.monthIdx + 1, 0).getDate();
-      var dia = Math.max(1, hoy.getDate());
-      var proyeccion = gasto / dia * diasMes;
-      var presu = sumaCampo(visibles, "presupuestoAnual", "presupuestoMensual", anual);
-      var estP = presu > 0 ? estadoPct(pctSeguro(proyeccion, presu), true) : "";
-      filas.push(indRow({
-        nombre: "Proyección a fin de mes",
-        valor: money.format(proyeccion),
-        valorColor: colorEstado(estP),
-        nota: "Vas en "+money.format(gasto)+" al día "+dia+" de "+diasMes+". A este ritmo cerrarías el mes en "+
-              money.format(proyeccion)+
-              (presu > 0 ? (proyeccion > presu ? ", <b>"+money.format(proyeccion - presu)+" sobre</b> tu presupuesto de "+money.format(presu)+"."
-                                               : ", dentro de tu presupuesto de "+money.format(presu)+".")
-                         : ".")
-      }));
-    }
-
-    // 3. Lo que sobró y no quedó anotado en ninguna parte (detector de fugas).
-    if(base.valor > 0){
-      var sobrante = base.valor - gasto;
-      var sinRegistrar = sobrante - ahorro;
-      var notaS, colorS, valorS;
-      if(sobrante < 0){
-        valorS = money.format(Math.abs(sobrante)); colorS = "var(--red)";
-        notaS = "Gastaste "+money.format(Math.abs(sobrante))+" más de lo que entró en este período. Puede ser normal si saliste de fondos que ya tenías.";
-      } else if(sinRegistrar > 1000){
-        valorS = money.format(sinRegistrar); colorS = "var(--amber)";
-        notaS = "Te sobraron "+money.format(sobrante)+" y anotaste "+money.format(ahorro)+" como ahorro: quedan <b>"+
-                money.format(sinRegistrar)+"</b> sin explicar. Suele ser plata que quedó en la cuenta sin registrar.";
-      } else {
-        valorS = money.format(Math.max(0, sinRegistrar)); colorS = "var(--green)";
-        notaS = "Todo lo que sobró está registrado como ahorro. Nada se perdió de vista.";
-      }
-      filas.push(indRow({ nombre: "Sobrante sin registrar", valor: valorS, valorColor: colorS, nota: notaS }));
-    }
-
-    // 4. Cuotas y gastos ya anotados en meses que todavía no llegan.
-    var hAnio = (state.historico || []).filter(function(a){ return a.anio === state.year; })[0];
-    if(hAnio && hAnio.gastoMeses && !anual){
-      var fut = 0, cuantos = 0;
-      for(var i = state.monthIdx + 1; i < 12; i++){
-        if(hAnio.gastoMeses[i] > 0){ fut += hAnio.gastoMeses[i]; cuantos++; }
-      }
-      if(fut > 0){
-        filas.push(indRow({
-          nombre: "Ya comprometido hacia adelante",
-          valor: money.format(fut),
-          valorColor: "var(--amber)",
-          nota: "Cuotas y gastos que ya están anotados en los "+cuantos+" meses siguientes de "+state.year+
-                " (unos "+money.format(fut/cuantos)+" por mes). Esa plata ya está tomada."
-        }));
-      }
-    }
-
-    $("indicadoresCard").innerHTML = filas.join("") ||
-      '<div class="empty-note">Aún no hay suficientes datos en este período para calcular indicadores.</div>';
-  }
-
   // Gasto mes a mes del año seleccionado, con los meses futuros ya comprometidos
   // en otro color y la comparación contra el mismo tramo del año anterior.
   function renderTendencia(){
@@ -2256,7 +2124,6 @@
         if(!json.ok) throw new Error(json.error || "Error desconocido");
         state.historico = json.anios;
         renderAhorro();
-        renderIndicadores();
         renderTendencia();
       })
       .catch(function(err){
