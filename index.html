@@ -615,7 +615,7 @@
       <div id="presupuestoHero"></div>
       <div class="stat-scroll" id="presupuestoStats"></div>
 
-      <div class="section-title">Presupuesto por categoría <span class="tag">mayor a menor</span></div>
+      <div class="section-title">Presupuesto por categoría <span class="tag" id="presupuestoAnioTag"></span> <span class="tag">mayor a menor</span></div>
       <div class="budget-card-grid" id="presupuestoBars"></div>
     </div>
 
@@ -1027,9 +1027,9 @@
       body: JSON.stringify(body)
     }).then(function(r){ return r.json(); })
       .then(function(json){
-        // Cualquier escritura puede cambiar el histórico (gasto mes a mes, ahorro,
-        // etc.), del que dependen los indicadores. Se invalida el caché para que
-        // el próximo render lo vuelva a pedir en vez de mostrar números viejos.
+        // Cualquier escritura puede cambiar el histórico (gasto/ahorro/ingresos mes a
+        // mes, histórico por año). Se invalida el caché para que el próximo render lo
+        // vuelva a pedir en vez de mostrar números viejos.
         if(json && json.ok) state.historico = null;
         return json;
       });
@@ -1069,7 +1069,10 @@
     var sueldo = anual ? d.sueldoAnual : d.sueldo;
     var ahorro = anual ? d.ahorroAnual : d.ahorro;
     var ganancias = Number(anual ? d.gananciasAnual : d.ganancias) || 0;
-    var diferencia = sueldo - gasto - ahorro;
+    // Desde 2026-09-12 "gasto" (subTotal) ya no resta GANANCIAS internamente
+    // (era un bug: la trataba como gasto negativo) — hay que sumarla acá
+    // explícitamente para que "Disponible" no la pierda.
+    var diferencia = sueldo + ganancias - gasto - ahorro;
 
     var visibles = categoriasGasto(d);
     var presupuestoTotal = sumaCampo(visibles, "presupuestoAnual", "presupuestoMensual", anual);
@@ -1541,7 +1544,10 @@
     var est = estadoPct(pct, hayPres);
 
     $("presupuestoHero").innerHTML = ringCard({
-      titulo: "Presupuesto " + sufijoPeriodo(),
+      // El año explícito en el título es a propósito (2026-09-12): Angel una
+      // vez editó el presupuesto de 2026 creyendo que estaba en 2027 (la hoja
+      // Presupuesto no distinguía año todavía). Ver PENDIENTES_para_Claude_Code.md.
+      titulo: "Presupuesto " + sufijoPeriodo() + " " + state.year,
       pct: hayPres ? pct : 0,
       color: colorEstado(est),
       badge: hayPres ? pct.toFixed(0) + "% usado" : "Sin presupuesto",
@@ -1577,6 +1583,7 @@
     var d = state.data;
     if(!d) return;
     var anual = esAnual();
+    $("presupuestoAnioTag").textContent = String(state.year);
 
     var cats = categoriasGasto(d).map(function(c){
       return {
@@ -1647,7 +1654,7 @@
     MESES.forEach(function(m, i){ meses[m] = base + (i < resto ? 1 : 0); });
 
     btn.disabled = true;
-    apiPost({ accion: "guardarPresupuesto", categoria: categoria, meses: meses })
+    apiPost({ accion: "guardarPresupuesto", anio: state.year, categoria: categoria, meses: meses })
       .then(function(json){
         if(!json.ok) throw new Error(json.error || "Error desconocido");
         showToast("Presupuesto actualizado ✓", "ok");
@@ -2256,6 +2263,9 @@
     }
     loadData(true);
     if(currentView === "viewHistorial") loadMovimientos();
+    // El presupuesto vive por año (2026-09-12): si cambia el año hay que
+    // volver a pedirlo, si no queda mostrando el presupuesto del año anterior.
+    if(currentView === "viewPresupuesto") loadPresupuesto();
   }
 
   $("prevBtn").onclick = function(){ shiftPeriod(-1); };
@@ -2263,6 +2273,7 @@
   $("refreshBtn").onclick = function(){
     loadData(true);
     if(currentView === "viewHistorial") loadMovimientos();
+    if(currentView === "viewPresupuesto") loadPresupuesto();
   };
 
   $("btnMensual").onclick = function(){
@@ -2537,7 +2548,8 @@
       accion: "agregarCategoria",
       nombre: nombre,
       tipo: catTipoSeleccionado,
-      presupuestoMensual: parseMiles($("catPresupuesto").value)
+      presupuestoMensual: parseMiles($("catPresupuesto").value),
+      anio: state.year
     }).then(function(json){
       if(!json.ok) throw new Error(json.error || "Error desconocido");
       showToast('Categoría "'+nombre+'" creada ✓', "ok");
@@ -2856,7 +2868,7 @@
   // Sólo trae el desglose por mes (lo que el resumen no incluye); la lista
   // visible se dibuja desde state.data en renderPresupuestoBars().
   function loadPresupuesto(){
-    return apiGet({ accion: "presupuesto" }).then(function(json){
+    return apiGet({ accion: "presupuesto", anio: state.year }).then(function(json){
       if(!json.ok) throw new Error(json.error || "Error desconocido");
       presupuestoState.categorias = json.categorias;
     }).catch(function(){});
@@ -2870,7 +2882,7 @@
       return;
     }
     presupuestoState.categoriaActual = categoria;
-    $("presupuestoEditTitle").textContent = "Presupuesto · " + categoria;
+    $("presupuestoEditTitle").textContent = "Presupuesto · " + categoria + " · " + state.year;
     $("presuMontoAnualDirecto").value = formatMiles(c.totalAnual);
     $("presuMontoAnual").value = "";
 
@@ -2942,7 +2954,7 @@
     var btn = $("presuGuardarBtn");
     btn.disabled = true;
     btn.textContent = "Guardando...";
-    apiPost({ accion: "guardarPresupuesto", categoria: presupuestoState.categoriaActual, meses: meses })
+    apiPost({ accion: "guardarPresupuesto", anio: state.year, categoria: presupuestoState.categoriaActual, meses: meses })
       .then(function(json){
         if(!json.ok) throw new Error(json.error || "Error desconocido");
         showToast("Presupuesto actualizado ✓", "ok");
