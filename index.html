@@ -1075,25 +1075,30 @@
     var diferencia = sueldo + ganancias - gasto - ahorro;
 
     var visibles = categoriasGasto(d);
-    var presupuestoTotal = sumaCampo(visibles, "presupuestoAnual", "presupuestoMensual", anual);
+    // El ahorro se suma acá también (2026-09-13), igual que en renderPresupuestoStats():
+    // Resumen y Presupuesto tienen que mostrar el mismo "Presupuesto"/"Gastado" total,
+    // si no quedan desincronizados como pasaba con GANANCIAS antes del fix del 2026-09-12.
+    var ahorroPresMeta = Number(anual ? d.ahorroPresupuestoAnual : d.ahorroPresupuesto) || 0;
+    var presupuestoTotal = sumaCampo(visibles, "presupuestoAnual", "presupuestoMensual", anual) + ahorroPresMeta;
+    var gastoTotal = gasto + ahorro;
 
     var hayPresupuesto = presupuestoTotal > 0;
-    var pctGasto = pctSeguro(gasto, presupuestoTotal);
-    var restante = presupuestoTotal - gasto;
+    var pctGasto = pctSeguro(gastoTotal, presupuestoTotal);
+    var restante = presupuestoTotal - gastoTotal;
     var estGasto = estadoPct(pctGasto, hayPresupuesto);
 
     $("resumenHero").innerHTML = ringCard({
       titulo: "Gasto " + sufijoPeriodo(),
-      pct: hayPresupuesto ? pctGasto : (gasto > 0 ? 100 : 0),
+      pct: hayPresupuesto ? pctGasto : (gastoTotal > 0 ? 100 : 0),
       color: colorEstado(estGasto),
       badge: hayPresupuesto ? pctGasto.toFixed(0) + "% usado" : "Sin presupuesto",
       badgeCls: estGasto === "over" ? "over" : (estGasto === "warn" ? "warn" : ""),
-      big: hayPresupuesto ? pctGasto.toFixed(0) + "%" : money.format(gasto),
+      big: hayPresupuesto ? pctGasto.toFixed(0) + "%" : money.format(gastoTotal),
       bigSmall: !hayPresupuesto,
       small: hayPresupuesto ? "del presupuesto" : "gastado",
       tri: [
         { v: money.format(presupuestoTotal), l: "Presupuesto", cls: "acc" },
-        { v: money.format(gasto), l: "Gastado" },
+        { v: money.format(gastoTotal), l: "Gastado" },
         { v: money.format(Math.abs(restante)), l: restante >= 0 ? "Te queda" : "Te pasaste",
           cls: restante >= 0 ? "pos" : "neg" }
       ]
