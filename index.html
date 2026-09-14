@@ -1535,8 +1535,13 @@
     if(!d) return;
     var anual = esAnual();
     var cats = categoriasGasto(d);
-    var totalPresupuesto = sumaCampo(cats, "presupuestoAnual", "presupuestoMensual", anual);
-    var totalGasto = sumaCampo(cats, "totalAnual", "valorMes", anual);
+    // El ahorro se suma al total del anillo grande (pedido de Angel, 2026-09-14): antes solo
+    // sumaba gasto operativo, y el ahorro quedaba visible solo como tarjeta individual más
+    // abajo en renderPresupuestoBars(). Mismos campos que ya usa esa función.
+    var ahorroPresMeta = Number(anual ? d.ahorroPresupuestoAnual : d.ahorroPresupuesto) || 0;
+    var ahorroReal = Number(anual ? d.ahorroAnual : d.ahorro) || 0;
+    var totalPresupuesto = sumaCampo(cats, "presupuestoAnual", "presupuestoMensual", anual) + ahorroPresMeta;
+    var totalGasto = sumaCampo(cats, "totalAnual", "valorMes", anual) + ahorroReal;
     var pct = pctSeguro(totalGasto, totalPresupuesto);
     var restante = totalPresupuesto - totalGasto;
 
