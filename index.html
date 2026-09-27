@@ -2210,6 +2210,30 @@
 
   function loadMovimientos(){
     $("historialList").innerHTML = '<div class="empty-note">Cargando…</div>';
+    // El toggle Mes/Año es compartido con el resto de la app, pero esta función
+    // antes siempre pedía un solo mes (state.monthIdx) sin mirar state.mode: en
+    // modo "Año" el encabezado mostraba el año pero el listado seguía siendo de
+    // un mes suelto, con un conteo de gastos que no cuadraba con "todo el año"
+    // (bug real, 2026-09-27). En modo anual se piden los 12 meses y se combinan.
+    if(esAnual()){
+      var year = state.year;
+      return Promise.all(MESES.map(function(mes){
+        return apiGet({ accion: "movimientos", anio: year, mes: mes });
+      })).then(function(jsons){
+        jsons.forEach(function(json){
+          if(!json.ok) throw new Error(json.error || "Error desconocido");
+        });
+        var todos = [].concat.apply([], jsons.map(function(json){ return json.movimientos; }));
+        todos.sort(function(a,b){
+          return (MESES.indexOf(b.mes)*31 + (b.dia||0)) - (MESES.indexOf(a.mes)*31 + (a.dia||0));
+        });
+        state.movimientos = todos;
+        populateFiltros();
+        renderHistorial();
+      }).catch(function(err){
+        $("historialList").innerHTML = '<div class="empty-note">Error: '+err.message+'</div>';
+      });
+    }
     return apiGet({ accion: "movimientos", anio: state.year, mes: MESES[state.monthIdx] })
       .then(function(json){
         if(!json.ok) throw new Error(json.error || "Error desconocido");
@@ -2249,11 +2273,12 @@
     if(filtroPersona) movs = movs.filter(function(m){ return m.persona === filtroPersona; });
 
     $("historialCount").textContent = movs.length + " gastos";
+    var anualView = esAnual();
     $("historialList").innerHTML = movs.map(function(m){
       return '<div class="mov-row" data-fila="'+m.fila+'">' + catIcon(m.categoria) +
         '<div class="mov-body">' +
         '<div class="mov-top"><span class="mov-name">'+esc(m.categoria)+(m.detalle?' · '+esc(m.detalle):'')+'</span><span class="mov-amount">'+money.format(m.valor)+'</span></div>' +
-        '<div class="mov-sub"><span class="pill">Día '+m.dia+'</span><span class="pill">'+esc(m.persona)+'</span>'+(m.banco?'<span class="pill">'+esc(m.banco)+'</span>':'')+'</div>' +
+        '<div class="mov-sub">'+(anualView?'<span class="pill">'+esc(m.mes)+'</span>':'')+'<span class="pill">Día '+m.dia+'</span><span class="pill">'+esc(m.persona)+'</span>'+(m.banco?'<span class="pill">'+esc(m.banco)+'</span>':'')+'</div>' +
         '</div><span class="edit-chevron">✎</span></div>';
     }).join("") || '<div class="empty-note">No hay gastos registrados este período.</div>';
 
@@ -2286,17 +2311,26 @@
     if(currentView === "viewPresupuesto") loadPresupuesto();
   };
 
+  // Cambiar Mes/Año solo repintaba Resumen (render()): si el usuario estaba en
+  // Historial o Presupuesto, el encabezado pasaba a mostrar el año pero la
+  // lista/tarjetas se quedaban con los datos del mes que estaba seleccionado
+  // antes — mismo bug de fondo que loadMovimientos() (2026-09-27).
+  function onCambioModo(){
+    render();
+    if(currentView === "viewHistorial") loadMovimientos();
+    if(currentView === "viewPresupuesto") loadPresupuesto();
+  }
   $("btnMensual").onclick = function(){
     state.mode = "mensual";
     $("btnMensual").classList.add("active");
     $("btnAnual").classList.remove("active");
-    render();
+    onCambioModo();
   };
   $("btnAnual").onclick = function(){
     state.mode = "anual";
     $("btnAnual").classList.add("active");
     $("btnMensual").classList.remove("active");
-    render();
+    onCambioModo();
   };
 
   // ====== Tabs Resumen / Historial ======
