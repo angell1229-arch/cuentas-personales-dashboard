@@ -413,6 +413,11 @@
     background:var(--accent);color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;
   }
   .budget-bar-save:disabled{opacity:.6;}
+  .cat-edit-btn{
+    flex:0 0 auto;width:22px;height:22px;border-radius:7px;border:none;
+    background:var(--surface-2);color:var(--text-dim);font-size:11px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;padding:0;
+  }
 
   .share-btn{
     width:100%;margin:0 0 16px;padding:13px;border:none;border-radius:14px;
@@ -751,6 +756,34 @@
 
       <button type="submit" class="submit-btn" id="catSubmitBtn">Crear categoría</button>
     </form>
+  </div>
+
+  <div class="backdrop" id="editCatBackdrop"></div>
+  <div class="sheet" id="editCatSheet">
+    <div class="sheet-handle"></div>
+    <button class="close-x" id="closeEditCatSheet">✕</button>
+    <h2>Editar categoría</h2>
+    <form id="editCatForm">
+      <label>Nombre</label>
+      <input type="text" id="editCatNombre" placeholder="Ej: MASCOTA" required>
+
+      <label>Tipo</label>
+      <div class="type-tabs" id="editCatTipoTabs">
+        <button type="button" data-tipo="VARIABLE">Variable</button>
+        <button type="button" data-tipo="FIJO">Fijo</button>
+      </div>
+
+      <button type="submit" class="submit-btn" id="editCatSubmitBtn">Guardar cambios</button>
+    </form>
+
+    <div id="reasignarBox" style="display:none;margin-top:16px;padding-top:16px;border-top:1px solid var(--border);">
+      <p class="cat-sub" id="reasignarMsg" style="margin-bottom:10px;"></p>
+      <label>Mover esos gastos a</label>
+      <select id="reasignarSelect"></select>
+      <button type="button" class="submit-btn" id="reasignarConfirmBtn" style="margin-top:10px;">Mover y eliminar categoría</button>
+    </div>
+
+    <button type="button" class="delete-btn" id="deleteCatBtn">Eliminar categoría</button>
   </div>
 
   <div class="backdrop" id="deudaBackdrop"></div>
@@ -1633,6 +1666,7 @@
         '<div class="budget-bar-top">' + catIcon(c.nombre, 'sm') +
         '<span class="budget-bar-name">'+esc(c.nombre)+(c.meta?' <span class="tag" style="font-size:9px;padding:1px 6px;">meta</span>':'')+'</span>' +
         '<span class="budget-bar-pct">'+pct.toFixed(1)+'%</span>' +
+        (c.meta ? '' : '<button type="button" class="cat-edit-btn" title="Editar categoría">✎</button>') +
         '</div>' +
         '<div class="budget-bar-track"><div class="budget-bar-fill" style="width:'+widthPct.toFixed(1)+'%;background:'+color+'"></div></div>' +
         '<div class="cat-sub">'+sub+'</div>' +
@@ -1653,6 +1687,8 @@
       row.querySelector(".budget-bar-months").onclick = function(){
         openPresupuestoEdit(cats[i].nombre);
       };
+      var editBtn = row.querySelector(".cat-edit-btn");
+      if(editBtn) editBtn.onclick = function(){ openEditCategoria(cats[i].nombre); };
     });
   }
 
@@ -2607,6 +2643,110 @@
       btn.textContent = "Crear categoría";
     });
   });
+
+  // ====== Editar / eliminar categoría ======
+  // No puede haber pérdida de información (pedido explícito de Angel,
+  // 2026-09-28): renombrar propaga el cambio a Movimientos/Presupuesto/
+  // Compartidos en el backend (mismo texto, nunca se "pierden" del reporte);
+  // eliminar exige reasignar los gastos existentes a otra categoría antes de
+  // borrar — el backend responde `requiereReasignacion` si hace falta.
+  var editCatNombreOriginal = null;
+  var editCatTipoSeleccionado = "VARIABLE";
+
+  function openEditCategoria(nombre){
+    editCatNombreOriginal = nombre;
+    $("editCatForm").reset();
+    $("editCatNombre").value = nombre;
+    // El tipo real (FIJO/VARIABLE) vive en las categorías de Resumen (state.data.categorias);
+    // si no se encuentra (categoría recién creada sin datos del mes todavía), asume VARIABLE.
+    var catsData = (state.data && state.data.categorias) || [];
+    var found = catsData.find(function(c){ return String(c.nombre).trim().toUpperCase() === nombre.trim().toUpperCase(); });
+    editCatTipoSeleccionado = (found && found.tipo === "FIJO") ? "FIJO" : "VARIABLE";
+    document.querySelectorAll('#editCatTipoTabs button').forEach(function(b){ b.classList.toggle("active", b.dataset.tipo === editCatTipoSeleccionado); });
+    $("reasignarBox").style.display = "none";
+    $("editCatBackdrop").classList.add("show");
+    $("editCatSheet").classList.add("show");
+  }
+  $("closeEditCatSheet").onclick = closeEditCatSheet;
+  $("editCatBackdrop").onclick = closeEditCatSheet;
+  function closeEditCatSheet(){
+    $("editCatBackdrop").classList.remove("show");
+    $("editCatSheet").classList.remove("show");
+  }
+  document.querySelectorAll('#editCatTipoTabs button').forEach(function(btn){
+    btn.onclick = function(){
+      editCatTipoSeleccionado = btn.dataset.tipo;
+      document.querySelectorAll('#editCatTipoTabs button').forEach(function(b){ b.classList.remove("active"); });
+      btn.classList.add("active");
+    };
+  });
+
+  $("editCatForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var nombreNuevo = $("editCatNombre").value.trim();
+    if(!nombreNuevo){ showToast("Falta el nombre", "err"); return; }
+    var btn = $("editCatSubmitBtn");
+    btn.disabled = true;
+    btn.textContent = "Guardando...";
+    apiPost({
+      accion: "editarCategoria",
+      nombreActual: editCatNombreOriginal,
+      nombreNuevo: nombreNuevo,
+      tipo: editCatTipoSeleccionado
+    }).then(function(json){
+      if(!json.ok) throw new Error(json.error || "Error desconocido");
+      var msg = "Categoría actualizada ✓";
+      if(json.movimientosActualizados > 0) msg += " (" + json.movimientosActualizados + " gasto(s) re-etiquetados)";
+      showToast(msg, "ok");
+      closeEditCatSheet();
+      loadListas();
+      loadData(true);
+      loadPresupuesto();
+    }).catch(function(err){
+      showToast("Error: " + err.message, "err");
+    }).finally(function(){
+      btn.disabled = false;
+      btn.textContent = "Guardar cambios";
+    });
+  });
+
+  $("deleteCatBtn").onclick = function(){
+    intentarEliminarCategoria(null);
+  };
+
+  function intentarEliminarCategoria(reasignarA){
+    if(!reasignarA && !confirm('¿Eliminar la categoría "'+editCatNombreOriginal+'"?')) return;
+    var btn = reasignarA ? $("reasignarConfirmBtn") : $("deleteCatBtn");
+    btn.disabled = true;
+    var body = { accion: "eliminarCategoria", nombre: editCatNombreOriginal };
+    if(reasignarA) body.reasignarA = reasignarA;
+    apiPost(body).then(function(json){
+      if(json.ok){
+        showToast('Categoría eliminada' + (json.movimientosReasignados ? ' — ' + json.movimientosReasignados + ' gasto(s) movidos a "' + json.reasignadoA + '"' : '') + ' ✓', "ok");
+        closeEditCatSheet();
+        loadListas();
+        loadData(true);
+        loadPresupuesto();
+        return;
+      }
+      if(json.requiereReasignacion){
+        var cats = ((state.listas && state.listas.categorias) || []).filter(function(c){ return c !== editCatNombreOriginal; });
+        $("reasignarSelect").innerHTML = cats.map(function(c){ return '<option value="'+esc(c)+'">'+esc(c)+'</option>'; }).join("");
+        $("reasignarMsg").textContent = json.mensaje;
+        $("reasignarBox").style.display = "block";
+        return;
+      }
+      throw new Error(json.error || "Error desconocido");
+    }).catch(function(err){
+      showToast("Error: " + err.message, "err");
+    }).finally(function(){
+      btn.disabled = false;
+    });
+  }
+
+  $("reasignarConfirmBtn").onclick = function(){
+    intentarEliminarCategoria($("reasignarSelect").value);
+  };
 
   // ====== Formulario de metas ======
   var metaTipo = "acumular";
