@@ -532,17 +532,6 @@
   .stat-mini .v .full{display:none;}
   .stat-mini .v.pos{color:var(--green);} .stat-mini .v.neg{color:var(--red);} .stat-mini .v.acc{color:var(--accent);}
 
-  /* Alertas: categorías pasadas o cerca del tope */
-  .alert-row{display:flex;gap:8px;overflow-x:auto;margin:0 -16px 4px;padding:0 16px 4px;scrollbar-width:none;}
-  .alert-row::-webkit-scrollbar{display:none;}
-  .alert-row:empty{display:none;}
-  .alert-chip{
-    flex:0 0 auto;border:none;border-radius:13px;padding:9px 12px;font-size:12px;font-weight:700;
-    font-family:inherit;cursor:pointer;display:flex;align-items:center;gap:6px;
-  }
-  .alert-chip.over{background:var(--red-soft);color:var(--red);}
-  .alert-chip.warn{background:var(--amber-soft);color:var(--amber);}
-
   /* Categorías de Resumen como lista (antes tarjetas de a 2) */
   .cat-list{padding:2px 14px;margin-bottom:4px;}
   .cat-line{display:flex;align-items:center;gap:11px;padding:12px 0;border-bottom:1px solid var(--border);}
@@ -666,7 +655,6 @@
     .stat-row{max-width:620px;}
     .stat-mini .v .short{display:none;}
     .stat-mini .v .full{display:inline;}
-    .alert-row{margin:0 0 4px;padding:0 0 4px;flex-wrap:wrap;}
     .people-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));}
     .budget-card-grid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));}
 
@@ -716,7 +704,6 @@
       <div class="stat-row" id="statScroll">
         <div class="stat-mini"><div class="l">Sueldo</div><div class="v skeleton" style="height:16px;margin:4px 8px 0;">&nbsp;</div></div>
       </div>
-      <div class="alert-row" id="alertRow"></div>
 
       <div class="section-title">Gasto mes a mes <span class="tag" id="tendenciaTag"></span></div>
       <div class="card" style="padding:10px 16px;" id="tendenciaCard"></div>
@@ -1335,7 +1322,6 @@
       el.onclick = function(){ showToast(el.dataset.label + ": " + el.dataset.full); };
     });
 
-    renderAlertas(visibles, anual);
 
     renderCompartidos();
     renderPresupuestoStats();
@@ -1419,26 +1405,6 @@
       '<div class="l">'+esc(label)+'</div>' +
       '<div class="v'+(cls ? " "+cls : "")+'"><span class="short">'+(prefijo || "")+montoCorto(valor)+'</span>' +
       '<span class="full">'+full+'</span></div></button>';
-  }
-
-  // Chips arriba de todo con las categorías pasadas o cerca del tope (mismos
-  // umbrales de estadoPct: >100% rojo, >80% ámbar). Tocar uno lleva a Presupuesto.
-  function renderAlertas(visibles, anual){
-    var items = visibles.map(function(c){
-      var v = Number(anual ? c.totalAnual : c.valorMes) || 0;
-      var p = Number(anual ? c.presupuestoAnual : c.presupuestoMensual) || 0;
-      var pct = pctSeguro(v, p);
-      return { nombre: c.nombre, pct: pct, est: estadoPct(pct, p > 0), fijo: c.tipo === "FIJO" };
-    // Un fijo pagado completo (ej. CUOTA CASA al 100%) no es una alerta: en los
-    // fijos solo avisa si se pasó; el aviso ámbar es para los variables.
-    }).filter(function(i){ return i.est === "over" || (i.est === "warn" && !i.fijo); });
-    items.sort(function(a,b){ return b.pct - a.pct; });
-    $("alertRow").innerHTML = items.map(function(i){
-      return '<button type="button" class="alert-chip '+i.est+'">'+(i.est === "over" ? "⚠" : "●")+' '+esc(i.nombre)+' · '+i.pct.toFixed(0)+'%</button>';
-    }).join("");
-    document.querySelectorAll("#alertRow .alert-chip").forEach(function(el){
-      el.onclick = function(){ switchView("viewPresupuesto"); };
-    });
   }
 
   var ICONO_TENDENCIA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>';
