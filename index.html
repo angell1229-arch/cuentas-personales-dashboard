@@ -781,6 +781,9 @@
       <div class="section-title">Ahorro por año <span class="tag" id="ahorroAcumuladoTag"></span></div>
       <div class="card" style="padding:4px 16px;" id="ahorroPorAnio"></div>
 
+      <div class="section-title">Sueldos por año</div>
+      <div class="card" style="padding:4px 16px;" id="sueldosPorAnio"></div>
+
       <div class="section-title">Ganancias extra por año</div>
       <div class="card" style="padding:4px 16px;" id="gananciasPorAnio"></div>
     </div>
@@ -2451,11 +2454,13 @@
     var hist = state.historico;
     if(!hist){
       $("ahorroPorAnio").innerHTML = '<div class="empty-note">Cargando histórico…</div>';
+      $("sueldosPorAnio").innerHTML = '';
       $("gananciasPorAnio").innerHTML = '';
       return;
     }
     if(!hist.length){
       $("ahorroPorAnio").innerHTML = '<div class="empty-note">Sin datos históricos.</div>';
+      $("sueldosPorAnio").innerHTML = '';
       $("gananciasPorAnio").innerHTML = '';
       return;
     }
@@ -2474,6 +2479,18 @@
         '<div class="year-sub"><span>Tasa: '+tasa.toFixed(1)+'%</span><span>Ingresos: '+money.format(ingresos)+'</span><span>Gasto: '+money.format(Number(a.gasto)||0)+'</span></div>' +
         '</div>';
     }).join("");
+
+    // Sueldos por año (2026-09-29): mismo formato que "Ganancias extra por año",
+    // con el `sueldo` anual que ya trae el endpoint historico (hoja Manual, concepto SUELDO).
+    var maxSueldo = Math.max.apply(null, hist.map(function(a){ return Number(a.sueldo)||0; }).concat([1]));
+    var totalSueldo = hist.reduce(function(acc,a){ return acc + (Number(a.sueldo)||0); }, 0);
+    $("sueldosPorAnio").innerHTML = hist.slice().reverse().map(function(a){
+      var sd = Number(a.sueldo)||0;
+      return '<div class="year-row">' +
+        '<div class="year-top"><span class="year-label">'+a.anio+'</span><span class="year-amount">'+money.format(sd)+'</span></div>' +
+        '<div class="year-track"><div class="year-fill" style="width:'+pctSeguro(sd,maxSueldo).toFixed(1)+'%"></div></div>' +
+        '</div>';
+    }).join("") + '<div class="cat-sub" style="padding-bottom:10px;">Total sueldos registrados: <b>'+money.format(totalSueldo)+'</b></div>';
 
     var maxGan = Math.max.apply(null, hist.map(function(a){ return Number(a.ganancias)||0; }).concat([1]));
     var totalGan = hist.reduce(function(acc,a){ return acc + (Number(a.ganancias)||0); }, 0);
