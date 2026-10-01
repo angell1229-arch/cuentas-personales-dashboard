@@ -784,6 +784,9 @@
       <div class="section-title">Sueldos por año</div>
       <div class="card" style="padding:4px 16px;" id="sueldosPorAnio"></div>
 
+      <div class="section-title"><span>Horas extra y bonos <span class="tag" id="liqAnioTag"></span></span><button class="link-btn" id="addLiqBtn">+ Liquidación</button></div>
+      <div class="card" style="padding:10px 16px;" id="liquidacionesCard"></div>
+
       <div class="section-title">Ganancias extra por año</div>
       <div class="card" style="padding:4px 16px;" id="gananciasPorAnio"></div>
     </div>
@@ -830,6 +833,7 @@
       <button data-type="AHORRO">Ahorro</button>
     </div>
     <div class="type-hint" id="typeHint"></div>
+    <button type="button" class="ghost-btn" id="abrirLiqBtn" style="display:none;margin:0 0 6px;">Cargar la liquidación completa (horas extra, bonos, descuentos)</button>
 
     <!-- Registro rápido (rediseño 2026-09-28): monto grande arriba, fecha/banco/
          cuota resumidos en una línea (tocar para editarlos), categorías recientes
@@ -883,6 +887,64 @@
 
       <button type="submit" class="submit-btn" id="submitBtn">Guardar</button>
       <button type="button" class="delete-btn" id="deleteBtn" style="display:none;">Eliminar este gasto</button>
+    </form>
+  </div>
+
+  <!-- Liquidación de sueldo (2026-09-30): una fila en la hoja Liquidaciones. El
+       SUELDO del mes = Total haberes − Descuentos legales (regla aprobada por
+       Angel); haberes, líquido y sueldo se calculan solos mientras se escribe. -->
+  <div class="backdrop" id="liqBackdrop"></div>
+  <div class="sheet" id="liqSheet">
+    <div class="sheet-handle"></div>
+    <button class="close-x" id="closeLiqSheet">✕</button>
+    <h2>Cargar liquidación</h2>
+    <div class="type-hint">Copia los montos de tu liquidación. El sueldo del mes pasa a salir de acá (total haberes − descuentos legales).</div>
+    <form id="liqForm" novalidate>
+      <div class="row2">
+        <div><label>Mes</label><select id="lMes"></select></div>
+        <div><label>Año</label><input type="text" inputmode="numeric" id="lAnio" maxlength="4"></div>
+      </div>
+
+      <label>Haberes</label>
+      <div class="row2">
+        <div><div class="presu-hint">Sueldo base</div><input type="text" inputmode="numeric" class="liq-monto" data-campo="sueldoBase" placeholder="0"></div>
+        <div><div class="presu-hint">Gratificación</div><input type="text" inputmode="numeric" class="liq-monto" data-campo="gratificacion" placeholder="0"></div>
+      </div>
+      <div class="row2">
+        <div><div class="presu-hint">Horas extra ($)</div><input type="text" inputmode="numeric" class="liq-monto" data-campo="horasExtrasMonto" placeholder="0"></div>
+        <div><div class="presu-hint">Horas extra (cantidad)</div><input type="text" inputmode="decimal" id="lHoras" placeholder="0"></div>
+      </div>
+      <div class="row2">
+        <div><div class="presu-hint">Bono producción anual</div><input type="text" inputmode="numeric" class="liq-monto" data-campo="bonoProduccion" placeholder="0"></div>
+        <div><div class="presu-hint">Bono treceavo</div><input type="text" inputmode="numeric" class="liq-monto" data-campo="bonoTreceavo" placeholder="0"></div>
+      </div>
+      <div class="row2">
+        <div><div class="presu-hint">Bono cumplimiento</div><input type="text" inputmode="numeric" class="liq-monto" data-campo="bonoCumplimiento" placeholder="0"></div>
+        <div><div class="presu-hint">Otros bonos</div><input type="text" inputmode="numeric" class="liq-monto" data-campo="otrosBonos" placeholder="0"></div>
+      </div>
+      <div class="row2">
+        <div><div class="presu-hint">Aguinaldo</div><input type="text" inputmode="numeric" class="liq-monto" data-campo="aguinaldo" placeholder="0"></div>
+        <div><div class="presu-hint">Movilización y colación</div><input type="text" inputmode="numeric" class="liq-monto" data-campo="movilizacion" placeholder="0"></div>
+      </div>
+
+      <label>Descuentos</label>
+      <div class="row2">
+        <div><div class="presu-hint">Descuentos legales</div><input type="text" inputmode="numeric" class="liq-monto" data-campo="descuentosLegales" placeholder="0"></div>
+        <div><div class="presu-hint">Por compras (celular, fruta)</div><input type="text" inputmode="numeric" class="liq-monto" data-campo="descuentosCompras" placeholder="0"></div>
+      </div>
+      <div class="row2">
+        <div><div class="presu-hint">Anticipos</div><input type="text" inputmode="numeric" class="liq-monto" data-campo="anticipos" placeholder="0"></div>
+        <div><div class="presu-hint">Días trabajados</div><input type="text" inputmode="numeric" id="lDias" placeholder="30"></div>
+      </div>
+
+      <div class="presu-total-display" style="margin-top:16px;">
+        <span class="l">Sueldo del mes</span>
+        <span class="v" id="liqSueldo">$0</span>
+        <div class="cat-sub" id="liqDetalleCalc"></div>
+      </div>
+      <div class="presu-hint">Las compras descontadas por liquidación (celular, fruta) regístralas además como gasto.</div>
+
+      <button type="submit" class="submit-btn" id="liqSubmitBtn">Guardar liquidación</button>
     </form>
   </div>
 
@@ -2110,6 +2172,7 @@
     renderIngresosMeses();
     renderAhorroMeses();
     renderHistoricoAnios();
+    renderLiquidaciones();
   }
 
   // ====== Patrimonio (hoja Saldos) ======
@@ -2481,7 +2544,8 @@
     }).join("");
 
     // Sueldos por año (2026-09-29): mismo formato que "Ganancias extra por año",
-    // con el `sueldo` anual que ya trae el endpoint historico (hoja Manual, concepto SUELDO).
+    // con el `sueldo` anual que ya trae el endpoint historico (fila SUELDO de
+    // Categorías: liquidación del mes si existe, si no hoja Manual — 2026-09-30).
     var maxSueldo = Math.max.apply(null, hist.map(function(a){ return Number(a.sueldo)||0; }).concat([1]));
     var totalSueldo = hist.reduce(function(acc,a){ return acc + (Number(a.sueldo)||0); }, 0);
     $("sueldosPorAnio").innerHTML = hist.slice().reverse().map(function(a){
@@ -2502,6 +2566,159 @@
         '</div>';
     }).join("") + '<div class="cat-sub" style="padding-bottom:10px;">Total ganancias extra registradas: <b>'+money.format(totalGan)+'</b></div>';
   }
+
+  // ====== Liquidaciones (2026-09-30) ======
+  // Hoja Liquidaciones: el detalle de cada sueldo (horas extra, bonos,
+  // descuentos). En Metas se muestran las horas extra y bonos del año que se
+  // está viendo; el formulario agrega la liquidación de un mes.
+  function loadLiquidaciones(){
+    if(state.liquidaciones) { renderLiquidaciones(); return Promise.resolve(); }
+    return apiGet({ accion: "liquidaciones" }).then(function(json){
+      if(!json.ok) throw new Error(json.error || "Error desconocido");
+      state.liquidaciones = json.liquidaciones;
+      renderLiquidaciones();
+    }).catch(function(err){
+      $("liquidacionesCard").innerHTML = '<div class="empty-note">Error cargando liquidaciones: '+esc(err.message)+'</div>';
+    });
+  }
+
+  function bonosDe(l){
+    return (Number(l.bonoProduccion)||0) + (Number(l.bonoTreceavo)||0) + (Number(l.bonoCumplimiento)||0) +
+           (Number(l.otrosBonos)||0) + (Number(l.aguinaldo)||0);
+  }
+  function horasFmt(h){ return (Math.round((Number(h)||0) * 10) / 10).toLocaleString("es-CL"); }
+
+  function renderLiquidaciones(){
+    $("liqAnioTag").textContent = String(state.year);
+    var todas = state.liquidaciones;
+    if(!todas){
+      $("liquidacionesCard").innerHTML = '<div class="empty-note">Cargando liquidaciones…</div>';
+      return;
+    }
+    var porMes = {};
+    todas.forEach(function(l){ if(l.anio === state.year) porMes[l.mes] = l; });
+    var delAnio = MESES.map(function(m){ return porMes[m] || null; });
+    if(!delAnio.some(function(l){ return l; })){
+      $("liquidacionesCard").innerHTML = '<div class="empty-note">No hay liquidaciones cargadas para '+state.year+'.</div>';
+      return;
+    }
+
+    var extras = delAnio.map(function(l){ return l ? (Number(l.horasExtrasMonto)||0) + bonosDe(l) : 0; });
+    var max = Math.max.apply(null, extras.concat([1]));
+    var totHoras = 0, totHorasMonto = 0, totBonos = 0;
+    var filas = [];
+    delAnio.forEach(function(l, i){
+      if(!l) return;
+      var bonos = bonosDe(l);
+      totHoras += Number(l.horasExtrasHoras)||0;
+      totHorasMonto += Number(l.horasExtrasMonto)||0;
+      totBonos += bonos;
+      var partes = [];
+      if(l.horasExtrasMonto > 0) partes.push(horasFmt(l.horasExtrasHoras)+' h extra · '+money.format(l.horasExtrasMonto));
+      if(l.bonoProduccion > 0) partes.push('Bono producción '+money.format(l.bonoProduccion));
+      if(l.bonoTreceavo > 0) partes.push('Treceavo '+money.format(l.bonoTreceavo));
+      if(l.bonoCumplimiento > 0) partes.push('Cumplimiento '+money.format(l.bonoCumplimiento));
+      if(l.otrosBonos > 0) partes.push('Otros bonos '+money.format(l.otrosBonos));
+      if(l.aguinaldo > 0) partes.push('Aguinaldo '+money.format(l.aguinaldo));
+      filas.push('<div class="year-row">' +
+        '<div class="year-top"><span class="year-label">'+MESES_LABEL[i]+'</span><span class="year-amount">'+money.format(l.sueldo)+'</span></div>' +
+        '<div class="year-sub"><span>'+(partes.length ? partes.join(' · ') : 'Sin horas extra ni bonos')+'</span></div>' +
+        '</div>');
+    });
+
+    $("liquidacionesCard").innerHTML =
+      '<div class="mini-months">' + extras.map(function(v, i){
+        var h = Math.max(2, (v / max) * 100);
+        return '<div class="mm'+(v>0?' has':'')+'" style="height:'+h+'%" title="'+MESES_LABEL[i]+': '+money.format(v)+' en horas extra y bonos"></div>';
+      }).join("") + '</div>' +
+      '<div class="mini-labels">' + MESES_LABEL.map(function(m){ return '<span>'+m.slice(0,1)+'</span>'; }).join("") + '</div>' +
+      '<div class="cat-sub">'+state.year+': <b>'+horasFmt(totHoras)+' h extra</b> ('+money.format(totHorasMonto)+') · <b>'+money.format(totBonos)+'</b> en bonos y aguinaldos</div>' +
+      '<div style="margin-top:6px;">' + filas.reverse().join("") + '</div>' +
+      '<div class="cat-sub" style="padding-bottom:4px;">El monto de cada mes es el sueldo que usa la app (total haberes − descuentos legales).</div>';
+  }
+
+  var LIQ_MONTOS = document.querySelectorAll("#liqForm .liq-monto");
+  LIQ_MONTOS.forEach(function(inp){ attachMilesInput(inp); inp.addEventListener("input", recalcularLiquidacion); });
+  $("lMes").innerHTML = MESES.map(function(m, i){ return '<option value="'+m+'">'+MESES_LABEL[i]+'</option>'; }).join("");
+
+  function datosLiquidacion(){
+    var d = {};
+    LIQ_MONTOS.forEach(function(inp){ d[inp.dataset.campo] = parseMiles(inp.value); });
+    d.horasExtrasHoras = parseFloat(String($("lHoras").value || "0").replace(",", ".")) || 0;
+    d.diasTrabajados = parseMiles($("lDias").value) || 30;
+    d.totalHaberes = d.sueldoBase + d.gratificacion + d.horasExtrasMonto + d.bonoProduccion + d.bonoTreceavo +
+                     d.bonoCumplimiento + d.otrosBonos + d.aguinaldo + d.movilizacion;
+    d.liquido = d.totalHaberes - d.descuentosLegales - d.descuentosCompras - d.anticipos;
+    d.sueldo = d.totalHaberes - d.descuentosLegales;
+    return d;
+  }
+  function recalcularLiquidacion(){
+    var d = datosLiquidacion();
+    $("liqSueldo").textContent = money.format(d.sueldo);
+    $("liqDetalleCalc").innerHTML = 'Total haberes '+money.format(d.totalHaberes)+' · líquido a recibir <b>'+money.format(d.liquido)+'</b> (compáralo con tu liquidación)';
+  }
+
+  function openLiqSheet(){
+    $("liqForm").reset();
+    // Por defecto el mes que se está viendo (en modo Año, el mes en curso).
+    var hoy = new Date();
+    var mesIdx = esAnual() ? hoy.getMonth() : state.monthIdx;
+    $("lMes").value = MESES[mesIdx];
+    $("lAnio").value = String(state.year);
+    recalcularLiquidacion();
+    $("liqBackdrop").classList.add("show");
+    $("liqSheet").classList.add("show");
+  }
+  function closeLiqSheet(){
+    $("liqBackdrop").classList.remove("show");
+    $("liqSheet").classList.remove("show");
+  }
+  $("addLiqBtn").onclick = openLiqSheet;
+  $("abrirLiqBtn").onclick = function(){ closeSheet(); openLiqSheet(); };
+  $("closeLiqSheet").onclick = closeLiqSheet;
+  $("liqBackdrop").onclick = closeLiqSheet;
+
+  $("liqForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    var d = datosLiquidacion();
+    var anio = parseInt($("lAnio").value, 10);
+    if(!anio || anio < 2000 || anio > 2100){ showToast("Año inválido", "err"); return; }
+    if(d.totalHaberes <= 0){ showToast("Faltan los haberes (sueldo base, gratificación...)", "err"); return; }
+    if(d.liquido < 0){ showToast("Los descuentos son mayores que los haberes", "err"); return; }
+
+    var body = { accion: "guardarLiquidacion", anio: anio, mes: $("lMes").value };
+    LIQ_MONTOS.forEach(function(inp){ body[inp.dataset.campo] = d[inp.dataset.campo]; });
+    body.horasExtrasHoras = d.horasExtrasHoras;
+    body.diasTrabajados = d.diasTrabajados;
+
+    var btn = $("liqSubmitBtn");
+    var etiqueta = MESES_LABEL[MESES.indexOf(body.mes)] + " " + anio;
+    function enviar(){
+      btn.disabled = true;
+      btn.textContent = "Guardando...";
+      return apiPost(body).then(function(json){
+        if(!json.ok && json.existe){
+          if(confirm("Ya hay una liquidación de " + etiqueta + ". ¿Reemplazarla con estos montos?")){
+            body.reemplazar = true;
+            return enviar();
+          }
+          return;
+        }
+        if(!json.ok) throw new Error(json.error || "Error desconocido");
+        showToast("Liquidación de " + etiqueta + " guardada ✓ · sueldo " + money.format(json.sueldo), "ok");
+        state.liquidaciones = null;
+        closeLiqSheet();
+        loadData(true);
+        if(currentView === "viewAhorro"){ loadHistorico(); loadLiquidaciones(); }
+      }).catch(function(err){
+        showToast("Error: " + err.message, "err");
+      }).finally(function(){
+        btn.disabled = false;
+        btn.textContent = "Guardar liquidación";
+      });
+    }
+    enviar();
+  });
 
   function loadHistorico(){
     if(state.historico) return Promise.resolve();
@@ -2768,7 +2985,7 @@
     if(view === "viewHistorial") loadMovimientos();
     if(view === "viewCompartidos"){ renderCompartidos(); loadDeudas(); }
     if(view === "viewPresupuesto") loadPresupuesto();
-    if(view === "viewAhorro"){ renderAhorro(); loadHistorico(); loadMetas(); loadDeudas(); loadSaldos(); }
+    if(view === "viewAhorro"){ renderAhorro(); loadHistorico(); loadMetas(); loadDeudas(); loadSaldos(); loadLiquidaciones(); }
   }
   $("navResumen").onclick = function(){ switchView("viewResumen"); };
   $("navHistorial").onclick = function(){ switchView("viewHistorial"); };
@@ -3021,7 +3238,9 @@
     $("personaField").style.display = isGasto || isGanancia ? "block" : "none";
     $("bancoCuotaField").style.display = isGasto ? "flex" : "none";
 
-    $("typeHint").textContent = "";
+    $("typeHint").textContent = currentType === "SUELDO" && !editingFila
+      ? "Este monto cuenta solo si ese mes no tiene liquidación cargada." : "";
+    $("abrirLiqBtn").style.display = currentType === "SUELDO" && !editingFila ? "block" : "none";
     // En gastos el campo Persona dice quién pagó (ver CLAUDE.md, Movimientos).
     $("personaLabel").textContent = isGasto ? "¿Quién pagó?" : "¿De quién es?";
     actualizarResumenEntrada();
@@ -3087,7 +3306,8 @@
 
     promesa.then(function(json){
       if(!json.ok) throw new Error(json.error || "Error desconocido");
-      showToast("Guardado correctamente ✓", "ok");
+      if(json.aviso) showToast("Guardado. " + json.aviso, "", 6000);
+      else showToast("Guardado correctamente ✓", "ok");
       recordarCategoria(categoriaUsada);
       closeSheet();
       loadData(true);
@@ -3665,12 +3885,12 @@
   };
 
   var toastTimer;
-  function showToast(msg, type){
+  function showToast(msg, type, ms){
     var t = $("toast");
     t.textContent = msg;
     t.className = "toast show" + (type ? " "+type : "");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function(){ t.classList.remove("show"); }, 3200);
+    toastTimer = setTimeout(function(){ t.classList.remove("show"); }, ms || 3200);
   }
 
   // ====== Configuración (URL + token) ======
