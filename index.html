@@ -489,6 +489,7 @@
   .setup-overlay h1{font-size:20px;margin:0 0 6px;}
   .setup-overlay p{color:var(--text-dim);font-size:13.5px;line-height:1.5;margin:0 0 20px;}
   .setup-overlay .submit-btn{margin-top:22px;}
+  .app-version{text-align:center;color:var(--text-dim);font-size:12px;margin:28px 0 0;}
 
   /* =========================================================
      Rediseño "Claro Esencial" (2026-09-28, opción 1 elegida por
@@ -791,6 +792,7 @@
       <div class="card" style="padding:4px 16px;" id="gananciasPorAnio"></div>
     </div>
 
+    <div class="app-version" id="appVersion"></div>
   </main>
 
   <nav class="bottom">
@@ -1148,6 +1150,7 @@
     <label>Token</label>
     <input type="text" id="setupToken" placeholder="Tu APP_TOKEN">
     <button class="submit-btn" id="setupSave">Guardar y continuar</button>
+    <div class="app-version" id="setupVersion"></div>
   </div>
 </div>
 
@@ -1160,6 +1163,12 @@
   // públicamente sin exponer nada): se piden una vez y quedan en localStorage.
   var API_URL = localStorage.getItem("cp_api_url") || "";
   var API_TOKEN = localStorage.getItem("cp_api_token") || "";
+
+  // Versión de la app: subirla en CADA cambio de la app (frontend o backend)
+  // y anotarla en el "Registro de cambios" de FUNCIONES_APP.md (columna Versión).
+  // Se muestra al pie de cada pestaña y en la pantalla de configuración.
+  var APP_VERSION = "2.4";
+  var APP_VERSION_FECHA = "2026-10-06";
 
   var MESES = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
   var MESES_LABEL = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -3914,6 +3923,10 @@
     loadListas();
     loadData(true);
   };
+
+  // ====== Versión visible ======
+  $("appVersion").textContent = "Cuentas Personales · versión " + APP_VERSION + " (" + APP_VERSION_FECHA + ")";
+  $("setupVersion").textContent = "Versión " + APP_VERSION + " (" + APP_VERSION_FECHA + ")";
 
   // ====== Init ======
   if(!API_URL){
