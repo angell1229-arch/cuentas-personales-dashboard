@@ -1,0 +1,249 @@
+<!doctype html><html lang='es'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width, initial-scale=1, viewport-fit=cover'><meta name='theme-color' content='#0d6e7d'><title>Guía de la app — Cuentas Personales</title><style>
+    *{box-sizing:border-box;}
+    html{-webkit-text-size-adjust:100%;}
+    body{margin:0;background:#eef2f3;color:#15191b;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:1.55;}
+    .barra{position:sticky;top:0;z-index:2;display:flex;align-items:center;gap:12px;background:#0d6e7d;color:#fff;
+      padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;}
+    .barra a{color:#fff;text-decoration:none;font-weight:700;font-size:14px;border:1px solid rgba(255,255,255,.45);border-radius:10px;padding:8px 12px;}
+    .barra span{font-size:14px;opacity:.85;}
+    main{max-width:780px;margin:0 auto;background:#fff;padding:20px 18px 70px;min-height:100vh;}
+    h1{font-size:25px;color:#0d6e7d;margin:4px 0 10px;letter-spacing:-.3px;line-height:1.2;}
+    h2{font-size:19px;color:#0d6e7d;border-bottom:2px solid #e7f3f4;padding-bottom:5px;margin:30px 0 10px;scroll-margin-top:70px;}
+    h3{font-size:16px;margin:20px 0 6px;}
+    p{margin:8px 0;}
+    table{display:block;overflow-x:auto;border-collapse:collapse;margin:10px 0 14px;font-size:14px;max-width:100%;}
+    th{background:#e7f3f4;text-align:left;}
+    th,td{border:1px solid #d5dadc;padding:7px 9px;vertical-align:top;min-width:90px;}
+    code{font-family:Menlo,monospace;font-size:13px;background:#f1f3f4;padding:1px 4px;border-radius:4px;}
+    pre{background:#f1f3f4;padding:10px 12px;border-radius:8px;font-size:13px;white-space:pre-wrap;}
+    blockquote{border-left:4px solid #0d6e7d;background:#e7f3f4;margin:12px 0;padding:10px 14px;border-radius:0 8px 8px 0;}
+    hr{border:none;border-top:1px solid #dfe3e4;margin:20px 0;}
+    ul,ol{padding-left:22px;margin:6px 0 10px;} li{margin:3px 0;}
+    @media (prefers-color-scheme:dark){
+      body{background:#0c0f10;color:#e6eced;}
+      main{background:#15191b;}
+      h1,h2{color:#e6eced;border-color:#2b3336;}
+      th{background:#222a2d;} th,td{border-color:#2f383b;}
+      code,pre{background:#222a2d;} blockquote{background:#1d2427;} hr{border-color:#2b3336;}
+    }
+    </style></head><body><div class='barra'><a href='./'>← Volver a la app</a><span>Guía de la app</span></div><main><h1>Guía de la app — Cuentas Personales</h1>
+<blockquote><b>Versión de la app: 2.9</b> (2026-10-12). Esta guía explica en palabras simples qué muestra la app, qué significa cada cifra y cómo se calcula. Se actualiza con cada versión: lo nuevo está al final, en "Novedades por versión". Se abre desde el botón <b>?</b> de la app o en <code>GUIA_APP.pdf</code>. (El detalle técnico, para quien mantiene la app, está en <code>FUNCIONES_APP.md</code>.)</blockquote>
+<hr>
+<h2>1. Cómo está organizada la app</h2>
+<table><thead><tr><th>Pestaña</th><th>Para qué sirve</th></tr></thead><tbody>
+<tr><td><b>Resumen</b></td><td>Cómo vas en el mes (o el año): cuánto te queda del presupuesto, tus ingresos y cada categoría.</td></tr>
+<tr><td><b>Compartidos</b></td><td>Gastos 50/50 con Pablo (quién le debe a quién) y deudas con personas (Pablo, Mamá, Papá, Lagi…).</td></tr>
+<tr><td><b>Historial</b></td><td>Todos los movimientos del período, con buscador y filtros. Tocando uno lo editas o lo borras.</td></tr>
+<tr><td><b>Presupuesto</b></td><td>Cuánto quieres gastar por categoría y cuánto llevas. Aquí se cambia el presupuesto.</td></tr>
+<tr><td><b>Metas</b></td><td>Patrimonio, fondo de emergencia, metas, ahorro, sueldos, horas extra y bonos.</td></tr>
+</tbody></table>
+<p>Botones de arriba:</p>
+<table><thead><tr><th>Botón</th><th>Qué hace</th></tr></thead><tbody>
+<tr><td><b>‹ Octubre 2026 ›</b></td><td>Cambia de mes (o de año si estás en modo Año).</td></tr>
+<tr><td><b>Mes / Año</b></td><td>Ver un mes o el año completo. Afecta todas las pestañas.</td></tr>
+<tr><td><b>+ Nuevo</b></td><td>Registrar un gasto, una ganancia, el sueldo o un ahorro.</td></tr>
+<tr><td><b>?</b></td><td>Abre esta guía.</td></tr>
+<tr><td><b>📄</b></td><td>Arma el informe en PDF (ver §10).</td></tr>
+<tr><td><b>⚙</b></td><td>Configuración (URL y clave de conexión). Abajo dice la versión de la app.</td></tr>
+<tr><td><b>↻</b></td><td>Vuelve a cargar los datos.</td></tr>
+</tbody></table>
+<p>Al pie de cada pestaña dice la versión, por ejemplo "versión 2.9". Si no ves la última, cierra la app y vuelve a abrirla.</p>
+<hr>
+<h2>2. Las cifras principales</h2>
+<table><thead><tr><th>Cifra</th><th>Qué es</th><th>Cómo se calcula</th></tr></thead><tbody>
+<tr><td><b>Gasto del mes</b></td><td>Lo que gastaste en el período.</td><td>Suma de todas tus categorías de gasto. <b>No</b> incluye la compra de casa y <b>no</b> resta las ganancias. En categorías compartidas con Pablo cuenta solo <b>tu mitad</b>.</td></tr>
+<tr><td><b>Ahorro</b></td><td>Lo que registraste como ahorro.</td><td>Lo que anotas con + Nuevo → Ahorro.</td></tr>
+<tr><td><b>Presupuesto</b></td><td>Lo que planeaste gastar y ahorrar.</td><td>Presupuesto de todas las categorías <b>+ la meta de ahorro</b>.</td></tr>
+<tr><td><b>Gastado</b></td><td>Lo que ya usaste del presupuesto.</td><td>Gasto del mes <b>+ ahorro real</b>.</td></tr>
+<tr><td><b>Te queda</b></td><td>Cuánto te queda del presupuesto.</td><td>Presupuesto − Gastado. Si es negativo dice "Te pasaste".</td></tr>
+<tr><td><b>% usado</b></td><td>Qué parte del presupuesto llevas.</td><td>Gastado ÷ Presupuesto.</td></tr>
+<tr><td><b>Sueldo</b></td><td>Lo que ganaste por tu trabajo ese mes.</td><td>Sale de la liquidación del mes (ver §6).</td></tr>
+<tr><td><b>Ganancias</b></td><td>Ingresos extra (ventas, devoluciones, lo que te pagan de vuelta).</td><td>Lo que anotas con + Nuevo → Ganancia.</td></tr>
+<tr><td><b>Disponible</b></td><td>Lo que te sobra de tus ingresos.</td><td>Sueldo + Ganancias − Gasto del mes − Ahorro.</td></tr>
+</tbody></table>
+<blockquote><b>Ejemplo.</b> Presupuesto de categorías $1.221.000 + meta de ahorro $200.000 = <b>Presupuesto $1.421.000</b>. Gastaste $1.088.180 y ahorraste $200.000 → <b>Gastado $1.288.180</b> → <b>Te queda $132.820</b> (91% usado). Sueldo $1.460.022 + ganancias $50.000 − gasto $1.088.180 − ahorro $200.000 = <b>Disponible $221.842</b>.</blockquote>
+<p><b>"Te queda" y "Disponible" no son lo mismo:</b> "Te queda" compara contra lo que <i>planeaste</i> (el presupuesto); "Disponible" compara contra lo que <i>ganaste</i> (tus ingresos). Puedes estar dentro del presupuesto y aun así gastar más de lo que ganaste, o al revés.</p>
+<hr>
+<h2>3. Colores y estados</h2>
+<table><thead><tr><th>Color</th><th>Significa</th></tr></thead><tbody>
+<tr><td><b>Verde</b></td><td>Vas bien: hasta 80% del presupuesto.</td></tr>
+<tr><td><b>Ámbar</b></td><td>Cuidado: más de 80%.</td></tr>
+<tr><td><b>Rojo</b></td><td>Te pasaste: más de 100%.</td></tr>
+</tbody></table>
+<ul>
+<li>Un <b>gasto fijo</b> (CUOTA CASA, LUZ, SEGUROS…) llega al 100% todos los meses porque se paga completo: mientras no pase del 100% se ve <b>verde</b>.
+</li>
+<li>En el <b>ahorro</b>, pasar de la meta es bueno: siempre se ve verde.
+</li>
+<li><b>Fondo de emergencia</b>: verde desde 6 meses de gastos cubiertos, gris entre 3 y 6, rojo bajo 3.
+</li></ul>
+<hr>
+<h2>4. Categorías: fijos y variables</h2>
+<ul>
+<li><b>Fijos</b>: se pagan todos los meses por un monto parecido (CUOTA CASA, LUZ, AGUA, INTERNET, SEGUROS, ENTEL…).
+</li>
+<li><b>Variables</b>: dependen de cuánto consumas (COMIDA, SALIDAS, GASOLINA, COMPRAS…).
+</li>
+<li><b>Compra de casa</b> va aparte: se muestra, pero <b>no cuenta</b> en ningún total de gasto ni en el disponible.
+</li>
+<li><b>GANANCIAS</b> es un ingreso: se ve aparte y <b>no resta</b> del gasto.
+</li>
+<li>Puedes crear una categoría (Resumen → + Nueva categoría) y renombrarla, cambiarla de tipo o eliminarla (Presupuesto → ✎). Si la eliminas y tiene gastos, la app te pide a qué categoría moverlos.
+</li></ul>
+<hr>
+<h2>5. Compartidos con Pablo y deudas</h2>
+<p><b>Gastos compartidos 50/50</b> (COMIDA, LUZ, AGUA, INTERNET, CASA, GAS, ARRIENDO, SALIDAS 2):</p>
+<ul>
+<li>Se anotan por el <b>total del hogar</b>; en Resumen y Presupuesto ves <b>tu mitad</b>.
+</li>
+<li><b>Balance</b> = (lo que pagaste tú − lo que pagó Pablo) ÷ 2. Si es positivo, <b>Pablo te debe</b>; si es negativo, le debes tú.
+</li>
+<li><b>DEUDA BCI</b> es tu gasto (100%), pero su cuota completa se <b>descuenta</b> del balance con Pablo.
+</li>
+<li><b>Enviar resumen a Pablo</b> arma una imagen con el detalle para mandársela.
+</li></ul>
+<blockquote><b>Ejemplo.</b> Gastos de la casa $120.000: pagaste $90.000 y Pablo $30.000. Balance = ($90.000 − $30.000) ÷ 2 = <b>Pablo te debe $30.000</b>. Tu mitad del gasto es $60.000.</blockquote>
+<p><b>Deudas personales</b> (Pablo, Mamá, Papá, Lagi y las que agregues): es una libreta aparte. El saldo de cada persona es la suma de sus movimientos:</p>
+<table><thead><tr><th>Movimiento</th><th>Efecto</th></tr></thead><tbody>
+<tr><td><b>Le presté</b></td><td>La persona te debe más.</td></tr>
+<tr><td><b>Me pagó</b></td><td>Te debe menos (y además se anota como Ganancia).</td></tr>
+<tr><td><b>Me prestó</b></td><td>Le debes más.</td></tr>
+<tr><td><b>Le pagué</b></td><td>Le debes menos (y además se anota como gasto "Pago deudas").</td></tr>
+</tbody></table>
+<p>El balance de Compartidos es informativo: la deuda real de cada persona solo cambia con movimientos de Deudas.</p>
+<hr>
+<h2>6. Sueldo y liquidaciones</h2>
+<ul>
+<li><b>Sueldo del mes = Total haberes − Descuentos legales</b> de la liquidación. Es lo mismo que Líquido a recibir + Anticipos + Descuentos por compras (celular, fruta…).
+</li>
+<li>Las compras descontadas en la liquidación se anotan aparte como <b>gasto</b>.
+</li>
+<li>Si el mes tiene liquidación, se usa esa. Si no, se usa el sueldo que anotes con + Nuevo → Sueldo. <b>Nunca se suman los dos.</b>
+</li>
+<li>Cargar una liquidación: + Nuevo → Sueldo → "Cargar la liquidación completa", o Metas → + Liquidación. La app calcula en vivo el sueldo del mes y el líquido para que lo compares con el PDF de la liquidación.
+</li>
+<li>Bonos habituales: Bono Producción Anual en mayo, Treceavo en noviembre y diciembre, Bono Cumplimiento en noviembre, diciembre y enero, y aguinaldos en septiembre y diciembre. En Metas → "Horas extra y bonos" ves lo de cada mes.
+</li></ul>
+<hr>
+<h2>7. Presupuesto</h2>
+<ul>
+<li>Cada año tiene su propio presupuesto y <b>parte en $0</b>: no se copia solo al año siguiente.
+</li>
+<li>En cada categoría puedes escribir un <b>monto anual</b> (se reparte en partes iguales en los 12 meses) o usar <b>▤</b> para poner un monto distinto cada mes o repartir por porcentajes.
+</li>
+<li><b>AHORRO</b> también tiene presupuesto: es tu <b>meta de ahorro</b>.
+</li>
+<li>Resumen y Presupuesto muestran <b>siempre el mismo</b> Presupuesto y Gastado (los dos incluyen el ahorro).
+</li></ul>
+<hr>
+<h2>8. Metas y patrimonio</h2>
+<p><b>Patrimonio</b> (Metas → + Cuenta): anotas lo que tienes (efectivo, inversiones, propiedades, vehículos, préstamos que te deben) y lo que debes.</p>
+<ul>
+<li><b>Patrimonio neto</b> = activos − deudas. Solo la categoría "Deuda" resta.
+</li>
+<li><b>% tuyo</b>: si algo es compartido (por ejemplo la casa al 50% con Pablo), cuenta solo tu parte.
+</li>
+<li><b>Fondo de emergencia</b> = efectivo ÷ gasto promedio mensual del año. Dice cuántos meses podrías cubrir tus gastos con tu efectivo.
+</li></ul>
+<p><b>Metas</b> (Metas → + Nueva meta):</p>
+<table><thead><tr><th>Tipo</th><th>Cómo se mide</th></tr></thead><tbody>
+<tr><td><b>Acumular</b></td><td>Cuánto llevas juntado (por ejemplo en AHORRO) contra el objetivo. Si le pones fecha, dice cuánto necesitas por mes: lo que falta ÷ meses que quedan.</td></tr>
+<tr><td><b>Pagar deuda</b></td><td>Cuánto de la deuda con esa persona ya bajó.</td></tr>
+<tr><td><b>Reducir gasto</b></td><td>Lo que llevas gastado este mes en esa categoría contra el tope. Aquí gastar menos es ir bien.</td></tr>
+</tbody></table>
+<p><b>Ahorro del período</b>: cuánto ahorraste contra tu meta y tu <b>tasa de ahorro</b> = ahorro ÷ (sueldo + ganancias). Se marca como buena desde 20%.</p>
+<hr>
+<h2>9. Proyección del mes (tarjeta "Te queda")</h2>
+<p>Solo aparece en el mes en curso y es una estimación:</p>
+<ul>
+<li><b>Fijos y ahorro</b> se cuentan completos: lo que ya pagaste o lo presupuestado, lo que sea mayor.
+</li>
+<li><b>Variables</b> se proyectan al ritmo que llevas: lo gastado en variables × días del mes ÷ día de hoy.
+</li>
+<li>Te dice si cerrarías dentro del presupuesto o por cuánto te pasarías, y <b>cuánto puedes gastar por día en variables</b>: (presupuesto − fijos y ahorro − variables ya gastados) ÷ días que quedan.
+</li>
+<li>Los primeros 4 días del mes solo muestra el "por día", porque un gasto grande al principio distorsiona el ritmo.
+</li></ul>
+<hr>
+<h2>10. Informe en PDF</h2>
+<p>Botón <b>📄</b> → elige el tipo → <b>Generar informe</b> → <b>Guardar PDF / Imprimir</b> → "Guardar como PDF" (en iPhone: Compartir → Guardar en Archivos).</p>
+<table><thead><tr><th>Tipo</th><th>Qué trae</th></tr></thead><tbody>
+<tr><td><b>Completo</b> (por defecto)</td><td>Las tres partes de abajo en un solo PDF, cada una en página nueva.</td></tr>
+<tr><td><b>Mes</b></td><td>Cifras del mes, "Lo principal", proyección del mes, comparación con el mes anterior y con el promedio del año, categorías contra presupuesto (con el mes anterior), los 10 gastos más grandes y lo compartido con Pablo.</td></tr>
+<tr><td><b>Año</b></td><td>Cifras del año, gráfico y tabla mes a mes contra el año anterior, categorías del año, los 10 gastos más grandes del año, horas extra y bonos, compartidos y metas.</td></tr>
+<tr><td><b>Proyecciones</b></td><td>Cómo cerrarías el año (ver §11), gastos ya anotados a futuro (cuotas), patrimonio, fondo de emergencia y metas pendientes.</td></tr>
+</tbody></table>
+<ul>
+<li>El informe usa el mes o año que estás viendo; para otro período, cámbialo arriba antes de abrirlo. Proyecciones es siempre del año en curso.
+</li>
+<li><b>"Lo principal"</b> es un resumen automático: cuánto llevas usado, qué categorías se pasaron y cuáles tienen holgura (menos de 40%).
+</li>
+<li>Las cifras son las mismas de la app: usan los mismos cálculos.
+</li></ul>
+<hr>
+<h2>11. Proyección del año (con temporadas)</h2>
+<p>Para estimar cómo cerrarás el año, la app toma en cuenta que hay meses en que <b>siempre gastas más</b> (por ejemplo diciembre):</p>
+<ol>
+<li><b>Meses ya cerrados</b>: se usa lo que gastaste de verdad.
+</li>
+<li><b>Peso de cada mes</b>: en cada año anterior se ve cuánto pesó ese mes contra un mes promedio de ese año, y se toma el valor del medio entre los años. Así una compra puntual (un notebook un noviembre) no infla ese mes para siempre. Con menos de 2 años de historia para un mes, su peso es 1.
+</li>
+<li><b>Nivel de este año</b>: el promedio de los meses cerrados, descontando su temporada.
+</li>
+<li><b>Cada mes que falta</b> = nivel de este año × peso del mes. Si en ese mes ya anotaste más (cuotas), se usa lo anotado.
+</li>
+<li><b>Sueldo y ahorro</b>: lo ya anotado o el promedio de los meses cerrados, lo que sea mayor. Las <b>ganancias no se proyectan</b>: solo cuentan las ya registradas.
+</li></ol>
+<blockquote><b>Ejemplo.</b> Si diciembre suele ser 29% más caro que un mes normal (peso ×1,29) y tu nivel de este año es $1.400.000 al mes, diciembre se proyecta en $1.400.000 × 1,29 = <b>$1.806.000</b>.</blockquote>
+<p>En la tabla del informe se ve el peso de cada mes.</p>
+<hr>
+<h2>12. Registrar movimientos (+ Nuevo)</h2>
+<table><thead><tr><th>Tipo</th><th>Dónde queda</th><th>Detalle</th></tr></thead><tbody>
+<tr><td><b>Gasto</b></td><td>Historial (Movimientos)</td><td>Categoría (las 4 más usadas a un toque), quién pagó (Yo, Pablo, Mamá, Papá, Lagi), banco, fecha, número de cuota y detalle.</td></tr>
+<tr><td><b>Ganancia</b></td><td>Historial, categoría GANANCIAS</td><td>De quién es y detalle.</td></tr>
+<tr><td><b>Sueldo</b></td><td>Hoja Manual</td><td>Solo cuenta si ese mes <b>no</b> tiene liquidación. Mejor cargar la liquidación completa.</td></tr>
+<tr><td><b>Ahorro</b></td><td>Hoja Manual</td><td>Suma al ahorro del mes y al "Gastado".</td></tr>
+</tbody></table>
+<ul>
+<li>En el celular el monto se escribe con el teclado de la app (con 000 para los miles).
+</li>
+<li>Un gasto se corrige o se borra tocándolo en <b>Historial</b>.
+</li></ul>
+<hr>
+<h2>13. Celular y computador</h2>
+<ul>
+<li><b>Celular</b>: pestañas abajo y botón <b>+ Nuevo</b> flotante.
+</li>
+<li><b>Computador</b> (pantallas anchas): barra arriba con las pestañas y el Resumen como <b>tabla de categorías</b> con columnas Presupuesto, Gastado, Disponible, % usado y Acumulado del año. Puedes <b>ordenar</b> haciendo clic en el título de una columna. A la derecha: "Te queda", gasto mes a mes, <b>últimos movimientos</b> y compra de casa.
+</li>
+<li>Los datos son los mismos en los dos; solo cambia cómo se ven.
+</li></ul>
+<hr>
+<h2>14. Preguntas frecuentes</h2>
+<ul>
+<li><b>¿Por qué la compra de casa no aparece en el gasto?</b> Es una inversión, no un gasto del mes; se muestra aparte.
+</li>
+<li><b>¿Las ganancias bajan mi gasto?</b> No: suman a tus ingresos (y al Disponible), pero no restan gasto.
+</li>
+<li><b>¿Por qué un fijo al 100% está verde?</b> Porque se paga completo cada mes; solo se pone rojo si pasa del 100%.
+</li>
+<li><b>¿Por qué en Resumen veo menos de lo que pagué en COMIDA?</b> Porque es compartida con Pablo: se ve tu mitad.
+</li>
+<li><b>Anoté el sueldo y no cambió nada.</b> Ese mes ya tiene liquidación: manda la liquidación.
+</li>
+<li><b>¿Cómo sé si tengo la última versión?</b> Mira la versión al pie de la pantalla y compárala con la de esta guía.
+</li></ul>
+<hr>
+<h2>15. Novedades por versión</h2>
+<table><thead><tr><th>Versión</th><th>Fecha</th><th>Qué cambió</th></tr></thead><tbody>
+<tr><td><b>2.9</b></td><td>2026-10-12</td><td>Guía de la app (esta), en PDF y dentro de la app con el botón <b>?</b>. El informe en PDF suma los colores de la app: íconos de categoría, porcentajes en pastillas verde/ámbar/rojo y barras.</td></tr>
+<tr><td>2.8</td><td>2026-10-12</td><td>Informe en PDF con diseño "Ejecutivo": portada, cifras en franja, secciones numeradas y recuadro "Lo principal".</td></tr>
+<tr><td>2.7</td><td>2026-10-12</td><td>La proyección del año considera los meses que históricamente son más caros (temporadas).</td></tr>
+<tr><td>2.6</td><td>2026-10-12</td><td>Informe en PDF: Completo, Mes, Año y Proyecciones.</td></tr>
+<tr><td>2.5</td><td>2026-10-12</td><td>Computador: barra arriba y Resumen como tabla de categorías, con últimos movimientos.</td></tr>
+<tr><td>2.4</td><td>2026-10-06</td><td>La versión de la app se ve al pie de cada pestaña.</td></tr>
+<tr><td>2.3</td><td>2026-09-30</td><td>El sueldo sale de las liquidaciones; formulario de liquidación y sección de horas extra y bonos.</td></tr>
+<tr><td>2.2</td><td>2026-09-29</td><td>Metas: "Sueldos por año".</td></tr>
+<tr><td>2.1</td><td>2026-09-29</td><td>Se quitaron los avisos de categorías pasadas del Resumen (el estado se ve en cada barra).</td></tr>
+<tr><td>2.0</td><td>2026-09-28</td><td>Rediseño "Claro Esencial" y editar/eliminar categorías.</td></tr>
+</tbody></table></main></body></html>
