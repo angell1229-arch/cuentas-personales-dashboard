@@ -491,6 +491,115 @@
   .setup-overlay .submit-btn{margin-top:22px;}
   .app-version{text-align:center;color:var(--text-dim);font-size:12px;margin:28px 0 0;}
 
+  /* ---------- Informe en PDF (2026-10-12) ----------
+     Pantalla completa con el informe; "Guardar PDF" imprime solo esto.
+     Siempre en la paleta clara (aunque el celular esté en modo oscuro). */
+  .informe{
+    --bg:#f4f7f8;
+    --surface:#ffffff;
+    --surface-2:#edf3f4;
+    --text:#0f1e22;
+    /* #5f7378 da 5:1 sobre blanco; el gris anterior (#6b7f84) quedaba en 4,2:1,
+       bajo el mínimo AA de 4,5:1 y se usa en texto chico (11-12px). */
+    --text-dim:#5f7378;
+    --accent:#0d6e7d;
+    --accent-2:#0a4954;
+    --accent-soft:#e7f3f4;
+    /* Verde y ámbar se usan también en texto chico (montos de 14-15px), así que
+       van en el tono que pasa 4,5:1 sobre blanco, no en el brillante de barra:
+       #0e9f6e daba 3,4:1 y #d97706 daba 3,2:1. */
+    --mint:#067a53;
+    --green:#067a53;
+    --green-soft:#e4f5ee;
+    --red:#dc2626;
+    --red-soft:#fdecea;
+    --amber:#b45309;
+    --amber-soft:#fef3e2;
+    --border:#e6edef;
+    --shadow:0 2px 14px rgba(13,45,50,0.06);
+    --radius:22px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    font-synthesis: none;
+    position:fixed;inset:0;z-index:70;overflow:auto;-webkit-overflow-scrolling:touch;
+    background:var(--bg);color:var(--text);
+    -webkit-print-color-adjust:exact;print-color-adjust:exact;
+  }
+  .inf-bar{
+    position:sticky;top:0;z-index:2;display:flex;gap:10px;justify-content:center;align-items:center;
+    padding:calc(10px + env(safe-area-inset-top,0px)) 16px 10px;background:var(--surface);border-bottom:1px solid var(--border);
+  }
+  .inf-bar button{
+    border:none;border-radius:12px;padding:11px 16px;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;
+    background:var(--accent);color:var(--accent-text, #fff);
+  }
+  .inf-bar button.sec{background:var(--surface-2);color:var(--text);}
+  .inf-ayuda{font-size:11.5px;color:var(--text-dim);text-align:center;padding:8px 16px 0;}
+  .inf-doc{
+    max-width:820px;margin:16px auto 40px;background:var(--surface);color:var(--text);
+    padding:30px 34px;border-radius:14px;box-shadow:var(--shadow);font-size:12.5px;line-height:1.45;
+  }
+  .inf-cab{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;border-bottom:2px solid var(--accent);padding-bottom:12px;}
+  .inf-app{font-size:11px;font-weight:800;color:var(--accent);text-transform:uppercase;letter-spacing:.6px;}
+  .inf-cab h1{font-size:21px;margin:3px 0 2px;letter-spacing:-.4px;}
+  .inf-sub{font-size:12px;color:var(--text-dim);}
+  .inf-meta{font-size:10.5px;color:var(--text-dim);text-align:right;white-space:nowrap;}
+  .inf-sec{margin-top:20px;}
+  .inf-parte{margin-top:34px;padding:8px 12px;border-radius:9px;background:var(--accent-soft);color:var(--accent);font-size:16px;font-weight:800;letter-spacing:-.2px;}
+  .inf-parte.salto{break-before:page;page-break-before:always;}
+  .inf-parte .s{display:block;font-size:11px;font-weight:600;color:var(--text-dim);margin-top:1px;}
+  .inf-sec h2{font-size:14px;margin:0 0 9px;padding-bottom:5px;border-bottom:1px solid var(--border);break-after:avoid;page-break-after:avoid;}
+  .inf-cifras{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px;}
+  .inf-cifra{border:1px solid var(--border);border-radius:9px;padding:8px 10px;break-inside:avoid;}
+  .inf-cifra .l{font-size:10.5px;color:var(--text-dim);font-weight:700;}
+  .inf-cifra .v{font-size:15px;font-weight:800;margin-top:2px;letter-spacing:-.3px;white-space:nowrap;}
+  .inf-cifra .s{font-size:10px;color:var(--text-dim);margin-top:2px;}
+  .inf-doc .pos{color:var(--green);} .inf-doc .neg{color:var(--red);}
+  .inf-destacado{font-size:17px;font-weight:800;margin:2px 0 4px;}
+  .inf-nota{font-size:11px;color:var(--text-dim);margin-top:7px;}
+  .inf-scroll{overflow-x:auto;}
+  .inf-tabla{width:100%;border-collapse:collapse;font-size:11.5px;font-variant-numeric:tabular-nums;}
+  .inf-tabla th{font-size:10px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;text-align:right;padding:6px 7px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  .inf-tabla td{padding:5px 7px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;}
+  .inf-tabla .izq{text-align:left;}
+  .inf-tabla td.izq.det{white-space:normal;}
+  .inf-tabla tr{break-inside:avoid;page-break-inside:avoid;}
+  .inf-tabla tr.tot td{font-weight:800;border-top:2px solid var(--text);border-bottom:none;}
+  .inf-tabla tr.fut td{color:var(--text-dim);}
+  .informe .cat-tabla{font-size:11.5px;}
+  .informe .cat-tabla th{cursor:default;padding:7px 7px 6px;font-size:10px;}
+  .informe .cat-tabla td{padding:4px 7px;}
+  .informe .cat-tabla tr{break-inside:avoid;page-break-inside:avoid;}
+  .informe .ct-cat{gap:7px;max-width:200px;}
+  .informe .ct-cat .cat-ico.sm{width:20px;height:20px;border-radius:6px;font-size:11px;}
+  .informe .ct-bar{display:none;}
+  .informe .ct-acum{display:table-cell;}
+  .informe tr:hover td{background:none !important;}
+  .informe .proj{margin-top:10px;}
+  .inf-graf{width:100%;height:auto;display:block;margin-top:4px;}
+  .inf-graf rect.a{fill:var(--accent);}
+  .inf-graf rect.b{fill:var(--text-dim);opacity:.35;}
+  .inf-graf rect.c{fill:var(--accent);opacity:.35;}
+  .inf-graf text{font-size:11px;fill:var(--text-dim);font-family:inherit;}
+  .inf-graf .inf-linea{stroke:var(--red);stroke-width:1.5;stroke-dasharray:5 4;}
+  .inf-graf .inf-eje{stroke:var(--border);stroke-width:1;}
+  .inf-leyenda{display:flex;flex-wrap:wrap;gap:14px;font-size:10.5px;color:var(--text-dim);margin-top:4px;}
+  .inf-leyenda i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px;}
+  .inf-pie{margin-top:26px;padding-top:8px;border-top:1px solid var(--border);font-size:10px;color:var(--text-dim);}
+  @media (max-width:640px){
+    .inf-doc{margin:0 0 30px;border-radius:0;padding:20px 16px;box-shadow:none;}
+    .inf-cab{flex-direction:column;align-items:flex-start;}
+    .inf-meta{text-align:left;}
+  }
+  @page{size:A4;margin:12mm;}
+  @media print{
+    body.con-informe #app{display:none !important;}
+    html, body.con-informe{height:auto;background:none !important;}
+    .informe{position:static;overflow:visible;background:none !important;}
+    .inf-bar, .inf-ayuda{display:none !important;}
+    .inf-doc{max-width:none;margin:0;padding:0;box-shadow:none;border-radius:0;background:none;}
+    .inf-sec{break-inside:auto;}
+  }
+
   /* ---------- Escritorio "Hoja de cálculo" (2026-10-12) ----------
      En el celular los envoltorios del Resumen no existen para el layout
      (display:contents) y lo marcado .solo-escritorio no se muestra. */
@@ -758,6 +867,9 @@
         <span class="app-brand">Cuentas Personales</span>
         <span class="app-name" id="viewTitle">Resumen</span>
         <div style="display:flex;gap:8px;">
+          <button class="icon-btn" id="informeBtn" title="Informe en PDF" aria-label="Informe en PDF">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 13h6M9 17h4"/></svg>
+          </button>
           <button class="icon-btn" id="settingsBtn" title="Configuración">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
           </button>
@@ -1233,6 +1345,21 @@
     <button type="button" class="submit-btn" id="presuGuardarBtn">Guardar presupuesto</button>
   </div>
 
+  <div class="backdrop" id="informeBackdrop"></div>
+  <div class="sheet" id="informeSheet">
+    <div class="sheet-handle"></div>
+    <button class="close-x" id="closeInformeSheet">✕</button>
+    <h2>Informe en PDF</h2>
+    <div class="type-tabs" id="informeTipos">
+      <button type="button" class="active" data-tipo="todo">Completo</button>
+      <button type="button" data-tipo="mes">Mes</button>
+      <button type="button" data-tipo="anio">Año</button>
+      <button type="button" data-tipo="proy">Proyecciones</button>
+    </div>
+    <div class="type-hint" id="informeDesc"></div>
+    <button type="button" class="submit-btn" id="informeGenerarBtn">Generar informe</button>
+  </div>
+
   <div class="toast" id="toast"></div>
 
   <div class="setup-overlay" id="setupOverlay" style="display:none;">
@@ -1245,6 +1372,15 @@
     <button class="submit-btn" id="setupSave">Guardar y continuar</button>
     <div class="app-version" id="setupVersion"></div>
   </div>
+</div>
+
+<div class="informe" id="informe" style="display:none;">
+  <div class="inf-bar">
+    <button type="button" id="informeImprimir">Guardar PDF / Imprimir</button>
+    <button type="button" class="sec" id="informeCerrar">Cerrar</button>
+  </div>
+  <div class="inf-ayuda">En la ventana que se abre elige "Guardar como PDF" (en iPhone: Compartir → Guardar en Archivos).</div>
+  <div class="inf-doc" id="informeDoc"></div>
 </div>
 
 <script>
@@ -1260,7 +1396,7 @@
   // Versión de la app: subirla en CADA cambio de la app (frontend o backend)
   // y anotarla en el "Registro de cambios" de FUNCIONES_APP.md (columna Versión).
   // Se muestra al pie de cada pestaña y en la pantalla de configuración.
-  var APP_VERSION = "2.5";
+  var APP_VERSION = "2.6";
   var APP_VERSION_FECHA = "2026-10-12";
 
   var MESES = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
@@ -1430,12 +1566,9 @@
     return MESES_LABEL[state.monthIdx] + " " + state.year;
   }
 
-  function render(){
-    $("periodLabel").textContent = periodLabel();
-    var d = state.data;
-    if(!d){ return; }
-
-    var anual = esAnual();
+  // Cifras de un período (mes o año): las usan el Resumen y el informe en PDF,
+  // así los dos muestran siempre lo mismo.
+  function cifrasPeriodo(d, anual){
     var gasto = anual ? d.subTotalAnual : d.subTotal;
     var sueldo = anual ? d.sueldoAnual : d.sueldo;
     var ahorro = anual ? d.ahorroAnual : d.ahorro;
@@ -1465,6 +1598,25 @@
     var fijosGasto = sumaCampo(visibles.filter(function(c){ return c.tipo === "FIJO"; }), "totalAnual", "valorMes", anual);
     var fijosPres = sumaCampo(visibles.filter(function(c){ return c.tipo === "FIJO"; }), "presupuestoAnual", "presupuestoMensual", anual);
     var variablesGasto = Math.max(0, gasto - fijosGasto);
+    return {
+      anual: anual, gasto: gasto, sueldo: sueldo, ahorro: ahorro, ganancias: ganancias, disponible: diferencia,
+      visibles: visibles, ahorroMeta: ahorroPresMeta, presupuesto: presupuestoTotal, gastado: gastoTotal,
+      hayPresupuesto: hayPresupuesto, pct: pctGasto, restante: restante, estado: estGasto,
+      fijos: fijosGasto, fijosPres: fijosPres, variables: variablesGasto
+    };
+  }
+
+  function render(){
+    $("periodLabel").textContent = periodLabel();
+    var d = state.data;
+    if(!d){ return; }
+
+    var anual = esAnual();
+    var cf = cifrasPeriodo(d, anual);
+    var gasto = cf.gasto, sueldo = cf.sueldo, ahorro = cf.ahorro, ganancias = cf.ganancias, diferencia = cf.disponible;
+    var visibles = cf.visibles, ahorroPresMeta = cf.ahorroMeta, presupuestoTotal = cf.presupuesto, gastoTotal = cf.gastado;
+    var hayPresupuesto = cf.hayPresupuesto, pctGasto = cf.pct, restante = cf.restante, estGasto = cf.estado;
+    var fijosGasto = cf.fijos, fijosPres = cf.fijosPres, variablesGasto = cf.variables;
     $("resumenHero").innerHTML = heroQueda({
       anual: anual,
       hayPresupuesto: hayPresupuesto,
@@ -1510,12 +1662,7 @@
     $("catVariables").innerHTML = variables.map(function(c){ return catLine(c, anual); }).join("") || '<div class="empty-note">Sin categorías variables.</div>';
 
     // Escritorio: las mismas categorías en tabla (las listas de arriba se ocultan ahí).
-    tablaArgs = {
-      anual: anual, fijos: fijos, variables: variables,
-      ahorro: ahorro, ahorroMeta: ahorroPresMeta,
-      ahorroAnual: Number(d.ahorroAnual) || 0, gastoAnual: (Number(d.subTotalAnual) || 0) + (Number(d.ahorroAnual) || 0),
-      presupuesto: presupuestoTotal, gastado: gastoTotal, restante: restante, pct: pctGasto, estado: estGasto
-    };
+    tablaArgs = argsTabla(d, cf);
     renderTablaCategorias();
     renderResumenMovs();
 
@@ -1592,12 +1739,33 @@
   var tablaOrden = { k: "", dir: 1 };
   var tablaArgs = null;
 
+  function argsTabla(d, cf){
+    return {
+      anual: cf.anual,
+      fijos: cf.visibles.filter(function(c){ return c.tipo === "FIJO"; }),
+      variables: cf.visibles.filter(function(c){ return c.tipo !== "FIJO"; }),
+      ahorro: cf.ahorro, ahorroMeta: cf.ahorroMeta,
+      ahorroAnual: Number(d.ahorroAnual) || 0, gastoAnual: (Number(d.subTotalAnual) || 0) + (Number(d.ahorroAnual) || 0),
+      presupuesto: cf.presupuesto, gastado: cf.gastado, restante: cf.restante, pct: cf.pct, estado: cf.estado
+    };
+  }
+
   function renderTablaCategorias(){
     var caja = $("catTabla");
     if(!caja || !tablaArgs) return;
-    var a = tablaArgs, anual = a.anual;
+    caja.innerHTML = htmlTablaCategorias(tablaArgs, { ordenable: true });
+  }
+
+  // op.ordenable: títulos con clic para ordenar (escritorio). op.prev (informe
+  // del mes): { porNombre: {NOMBRE: monto}, ahorro, total } agrega "Mes anterior".
+  function htmlTablaCategorias(a, op){
+    op = op || {};
+    var anual = a.anual, prev = op.prev || null;
     var cols = [["n","Categoría"],["p","Presupuesto"],["g","Gastado"],["d","Disponible"],["x","% usado"],["b",""]];
-    if(!anual) cols.push(["t","Acumulado " + state.year]);
+    // Con "Mes anterior" (informe del mes) no cabe también "Acumulado" en la hoja.
+    var conAcum = !anual && !prev;
+    if(conAcum) cols.push(["t","Acumulado " + state.year]);
+    if(prev) cols.push(["ant","Mes anterior"]);
 
     function clave(c){
       var x = datosCat(c, anual);
@@ -1610,34 +1778,37 @@
       return 0;
     }
     function ordenar(lista){
-      if(!tablaOrden.k) return lista;
+      if(!op.ordenable || !tablaOrden.k) return lista;
       return lista.slice().sort(function(p, q){
         var u = clave(p), v = clave(q);
         return (u > v ? 1 : (u < v ? -1 : 0)) * tablaOrden.dir;
       });
     }
-    function celdas(x, acum){
+    function celdas(x, acum, ant){
       return '<td>'+(x.hayPres ? money.format(x.presupuesto) : '<span class="dim">—</span>')+'</td>' +
         '<td class="g'+(x.estado === "over" ? " over" : "")+'">'+money.format(x.valor)+'</td>' +
         '<td'+(x.hayPres && x.restante < 0 ? ' class="over"' : '')+'>'+(x.hayPres ? money.format(x.restante) : '<span class="dim">—</span>')+'</td>' +
         '<td>'+(x.hayPres ? '<span class="ct-pct '+x.estado+'">'+x.pctReal.toFixed(0)+'%</span>' : '<span class="dim">—</span>')+'</td>' +
         '<td class="ct-bar">'+(x.hayPres ? '<div class="bar-track"><div class="bar-fill" style="width:'+x.pctBarra+'%;background:'+colorEstado(x.estado)+'"></div></div>' : '')+'</td>' +
-        (anual ? '' : '<td class="ct-acum">'+(acum === null ? '' : money.format(acum))+'</td>');
+        (conAcum ? '<td class="ct-acum">'+(acum === null ? '' : money.format(acum))+'</td>' : '') +
+        (prev ? '<td>'+(ant === null || ant === undefined ? '<span class="dim">—</span>' : money.format(ant))+'</td>' : '');
     }
-    function fila(nombre, x, acum){
-      return '<tr><td><div class="ct-cat">'+catIcon(nombre, 'sm')+'<span class="n">'+esc(nombre)+'</span></div></td>'+celdas(x, acum)+'</tr>';
+    function fila(nombre, x, acum, ant){
+      return '<tr><td><div class="ct-cat">'+catIcon(nombre, 'sm')+'<span class="n">'+esc(nombre)+'</span></div></td>'+celdas(x, acum, ant)+'</tr>';
+    }
+    function antDe(nombre){
+      if(!prev) return null;
+      var v = prev.porNombre[String(nombre).trim().toUpperCase()];
+      return v === undefined ? null : v;
     }
     function grupo(titulo, lista){
       if(!lista.length) return '';
       var g = sumaCampo(lista, "totalAnual", "valorMes", anual), p = sumaCampo(lista, "presupuestoAnual", "presupuestoMensual", anual);
       return '<tr class="grp"><td colspan="'+cols.length+'">'+titulo+' · '+money.format(g)+' de '+money.format(p)+'</td></tr>' +
-        ordenar(lista).map(function(c){ return fila(c.nombre, datosCat(c, anual), Number(c.totalAnual) || 0); }).join("");
+        ordenar(lista).map(function(c){ return fila(c.nombre, datosCat(c, anual), Number(c.totalAnual) || 0, antDe(c.nombre)); }).join("");
     }
 
-    if(!a.fijos.length && !a.variables.length){
-      caja.innerHTML = '<div class="empty-note">Sin categorías.</div>';
-      return;
-    }
+    if(!a.fijos.length && !a.variables.length) return '<div class="empty-note">Sin categorías.</div>';
     var ahorroX = datosMonto(a.ahorro, a.ahorroMeta, false);
     // Ahorrar más de la meta no es "pasarse": el ahorro con meta siempre va en verde.
     if(ahorroX.hayPres) ahorroX.estado = "ok";
@@ -1646,17 +1817,18 @@
       pctBarra: Math.min(100, a.pct), estado: a.estado, restante: Math.round(a.restante)
     };
 
-    caja.innerHTML = '<table class="cat-tabla"><thead><tr>' +
+    return '<table class="cat-tabla"><thead><tr>' +
       cols.map(function(c){
         if(c[0] === "b") return '<th class="sin-orden ct-bar"></th>';
+        if(!op.ordenable || c[0] === "ant") return '<th class="sin-orden'+(c[0] === "t" ? ' ct-acum' : '')+'">'+c[1]+'</th>';
         var on = tablaOrden.k === c[0];
         return '<th data-k="'+c[0]+'" class="'+(c[0] === "t" ? 'ct-acum' : '')+(on ? ' orden' : '')+'" title="Ordenar">'+c[1]+(on ? (tablaOrden.dir > 0 ? ' ↑' : ' ↓') : '')+'</th>';
       }).join("") +
       '</tr></thead><tbody>' +
       grupo("Gastos fijos", a.fijos) +
       grupo("Gastos variables", a.variables) +
-      ((a.ahorro || a.ahorroMeta) ? '<tr class="grp"><td colspan="'+cols.length+'">Ahorro</td></tr>' + fila("AHORRO", ahorroX, a.ahorroAnual) : '') +
-      '<tr class="tot"><td>Total</td>' + celdas(totalX, a.gastoAnual) + '</tr>' +
+      ((a.ahorro || a.ahorroMeta) ? '<tr class="grp"><td colspan="'+cols.length+'">Ahorro</td></tr>' + fila("AHORRO", ahorroX, a.ahorroAnual, prev ? prev.ahorro : null) : '') +
+      '<tr class="tot"><td>Total</td>' + celdas(totalX, a.gastoAnual, prev ? prev.total : null) + '</tr>' +
       '</tbody></table>';
   }
 
@@ -1816,10 +1988,8 @@
     return '<div class="proj warn">'+ICONO_TENDENCIA+'<span>A este ritmo cierras el mes en <b>'+money.format(proy)+'</b>: te pasarías por <b>'+money.format(proy - o.presupuesto)+'</b>.'+textoDia+'</span></div>';
   }
 
-  function renderCompartidos(){
-    var d = state.data;
-    if(!d) return;
-    var anual = state.mode === "anual";
+  // Balance de lo compartido con Pablo (lo usan la pestaña Compartidos y el informe en PDF).
+  function resumenCompartidos(d, anual){
     var ct = anual ? d.compartidos.totalAnual : d.compartidos.total;
     var ce = anual ? d.compartidos.entre2Anual : d.compartidos.entre2;
     var pagadoPablo = anual ? d.compartidos.pagadoPabloAnual : d.compartidos.pagadoPablo;
@@ -1839,6 +2009,17 @@
     var pagadoPropio = (anual ? d.compartidos.balanceAnual : d.compartidos.balance) * 2 + pagadoPablo;
 
     var notaDeuda = deudaBci > 0 ? ' Se descontó '+money.format(deudaBci)+' de la cuota BCI que le debes.' : '';
+    return { total: ct, mitad: ce, pagadoOtro: pagadoPablo, deudaBci: deudaBci, balance: balance,
+             label: balanceLabel, cls: balanceCls, pagadoPropio: pagadoPropio, notaDeuda: notaDeuda };
+  }
+
+  function renderCompartidos(){
+    var d = state.data;
+    if(!d) return;
+    var anual = state.mode === "anual";
+    var cp = resumenCompartidos(d, anual);
+    var ct = cp.total, ce = cp.mitad, pagadoPablo = cp.pagadoOtro, deudaBci = cp.deudaBci, balance = cp.balance;
+    var balanceLabel = cp.label, balanceCls = cp.cls, pagadoPropio = cp.pagadoPropio, notaDeuda = cp.notaDeuda;
     $("balanceNote").innerHTML =
       '<div class="balance-card">' +
         '<div class="who">Balance de la casa · '+(anual ? state.year : MESES_LABEL[state.monthIdx])+'</div>' +
@@ -2630,6 +2811,33 @@
     });
   }
 
+  // Avance y texto de una meta (lo usan Metas y el informe en PDF).
+  function datosMeta(m){
+    var esReducir = m.tipo === "reducir";
+    // En "reducir" el objetivo es un techo: gastar MENOS es ir bien, así que
+    // el estado se lee al revés que en las otras.
+    var pct = pctSeguro(m.actual, m.objetivo);
+    var estado = esReducir ? estadoPct(pct, true) : (pct >= 100 ? "ok" : (pct >= 50 ? "warn" : ""));
+    var color = esReducir ? colorEstado(estado) : (pct >= 100 ? "var(--green)" : "var(--accent)");
+
+    var sub;
+    if(esReducir){
+      sub = money.format(m.actual)+" este mes, de un tope de "+money.format(m.objetivo)+
+            (m.actual > m.objetivo ? " · <b style=\"color:var(--red)\">te pasaste "+money.format(m.actual-m.objetivo)+"</b>"
+                                   : " · te quedan "+money.format(m.objetivo-m.actual));
+    } else if(m.falta <= 0){
+      sub = "¡Cumplida! "+money.format(m.actual)+" de "+money.format(m.objetivo)+".";
+    } else {
+      sub = money.format(m.actual)+" de "+money.format(m.objetivo)+" · faltan "+money.format(m.falta);
+      if(m.necesarioPorMes){
+        sub += " · necesitas <b>"+money.format(m.necesarioPorMes)+"/mes</b> por "+m.mesesRestantes+" "+(m.mesesRestantes===1?"mes":"meses");
+      } else if(m.fecha && m.mesesRestantes !== null && m.mesesRestantes <= 0){
+        sub += " · <b style=\"color:var(--red)\">la fecha ya pasó</b>";
+      }
+    }
+    return { esReducir: esReducir, pct: pct, estado: estado, color: color, sub: sub };
+  }
+
   function renderMetas(){
     var metas = state.metas;
     if(!metas){ return; }
@@ -2639,28 +2847,8 @@
     }
 
     $("metasList").innerHTML = metas.map(function(m){
-      var esReducir = m.tipo === "reducir";
-      // En "reducir" el objetivo es un techo: gastar MENOS es ir bien, así que
-      // el estado se lee al revés que en las otras.
-      var pct = pctSeguro(m.actual, m.objetivo);
-      var estado = esReducir ? estadoPct(pct, true) : (pct >= 100 ? "ok" : (pct >= 50 ? "warn" : ""));
-      var color = esReducir ? colorEstado(estado) : (pct >= 100 ? "var(--green)" : "var(--accent)");
-
-      var sub;
-      if(esReducir){
-        sub = money.format(m.actual)+" este mes, de un tope de "+money.format(m.objetivo)+
-              (m.actual > m.objetivo ? " · <b style=\"color:var(--red)\">te pasaste "+money.format(m.actual-m.objetivo)+"</b>"
-                                     : " · te quedan "+money.format(m.objetivo-m.actual));
-      } else if(m.falta <= 0){
-        sub = "¡Cumplida! "+money.format(m.actual)+" de "+money.format(m.objetivo)+".";
-      } else {
-        sub = money.format(m.actual)+" de "+money.format(m.objetivo)+" · faltan "+money.format(m.falta);
-        if(m.necesarioPorMes){
-          sub += " · necesitas <b>"+money.format(m.necesarioPorMes)+"/mes</b> por "+m.mesesRestantes+" "+(m.mesesRestantes===1?"mes":"meses");
-        } else if(m.fecha && m.mesesRestantes !== null && m.mesesRestantes <= 0){
-          sub += " · <b style=\"color:var(--red)\">la fecha ya pasó</b>";
-        }
-      }
+      var x = datosMeta(m);
+      var esReducir = x.esReducir, pct = x.pct, color = x.color, sub = x.sub;
 
       return '<div class="cat-row meta-row" data-fila="'+m.fila+'">' +
         '<div class="cat-row-top">' + catIcon(m.tipo === "deuda" ? "DEUDAS" : (m.origen || m.nombre)) +
@@ -4154,6 +4342,458 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function(){ t.classList.remove("show"); }, ms || 3200);
   }
+
+  // ====== Informe en PDF (2026-10-12) ======
+  // Arma un informe del mes, del año o de proyecciones y lo muestra en
+  // pantalla completa; "Guardar PDF" usa la impresión del navegador ("Guardar
+  // como PDF"). Solo usa datos que la app ya pide a la API y las mismas
+  // funciones de cálculo que las pestañas (cifrasPeriodo, datosCat,
+  // htmlTablaCategorias, resumenCompartidos, datosMeta, proyeccionHtml), para
+  // que el informe nunca muestre cifras distintas a la app.
+  var informeTipo = "todo";
+  var tituloOriginal = document.title;
+
+  function okOError(json){
+    if(!json || !json.ok) throw new Error((json && json.error) || "Error desconocido");
+    return json;
+  }
+  function pedirResumen(anio, mi){
+    if(state.data && Number(state.data.anio) === anio && String(state.data.mes).toUpperCase() === MESES[mi]) return Promise.resolve(state.data);
+    return apiGet({ anio: anio, mes: MESES[mi] }).then(okOError);
+  }
+  function pedirHistorico(){
+    if(state.historico) return Promise.resolve(state.historico);
+    return apiGet({ accion: "historico" }).then(okOError).then(function(j){ state.historico = j.anios; return j.anios; });
+  }
+  function pedirMovimientos(anio, mi){
+    return apiGet({ accion: "movimientos", anio: anio, mes: MESES[mi] }).then(okOError).then(function(j){ return j.movimientos || []; });
+  }
+  function pedirMovimientosAnio(anio){
+    return Promise.all(MESES.map(function(mm, i){ return pedirMovimientos(anio, i); }))
+      .then(function(ls){ return [].concat.apply([], ls); });
+  }
+  function pedirMetas(){ return apiGet({ accion: "metas" }).then(okOError).then(function(j){ return j.metas || []; }); }
+  function pedirSaldos(){ return apiGet({ accion: "saldos" }).then(okOError); }
+
+  function pedirLiquidaciones(){
+    if(state.liquidaciones) return Promise.resolve(state.liquidaciones);
+    return apiGet({ accion: "liquidaciones" }).then(okOError).then(function(j){ state.liquidaciones = j.liquidaciones; return j.liquidaciones; });
+  }
+
+  function sumaRango(arr, desde, hasta){
+    var t = 0;
+    for(var i = desde; i <= hasta; i++) t += Number(arr && arr[i]) || 0;
+    return t;
+  }
+  function promedioPositivos(arr, desde, hasta){
+    var v = [];
+    for(var i = desde; i <= hasta; i++){ var x = Number(arr && arr[i]) || 0; if(x > 0) v.push(x); }
+    return v.length ? v.reduce(function(a, b){ return a + b; }, 0) / v.length : 0;
+  }
+  function anioDe(hist, anio){ return (hist || []).filter(function(a){ return a.anio === anio; })[0] || null; }
+  function fechaHoyTexto(){
+    var h = new Date();
+    return ("0" + h.getDate()).slice(-2) + "-" + ("0" + (h.getMonth() + 1)).slice(-2) + "-" + h.getFullYear();
+  }
+  function variacion(actual, antes){
+    if(!(antes > 0)) return "";
+    var p = (actual - antes) / antes * 100;
+    return (p >= 0 ? "+" : "−") + Math.abs(p).toFixed(1).replace(".", ",") + "% vs " ;
+  }
+
+  function infCifra(label, valor, sub, cls){
+    return '<div class="inf-cifra"><div class="l">'+label+'</div><div class="v'+(cls ? ' '+cls : '')+'">'+valor+'</div>' +
+      (sub ? '<div class="s">'+sub+'</div>' : '') + '</div>';
+  }
+  function infSeccion(titulo, html){ return '<section class="inf-sec"><h2>'+titulo+'</h2>'+html+'</section>'; }
+  // izq: cuántas columnas del comienzo van alineadas a la izquierda.
+  function infTabla(cabeza, filas, izq, pie, clasesFila){
+    function celda(tag, v, i){ return '<'+tag+(i < izq ? ' class="izq'+(tag === "td" && i === izq - 1 && izq > 2 ? ' det' : '')+'"' : '')+'>'+v+'</'+tag+'>'; }
+    return '<div class="inf-scroll"><table class="inf-tabla"><thead><tr>' + cabeza.map(function(c, i){ return celda("th", c, i); }).join("") + '</tr></thead><tbody>' +
+      filas.map(function(f, k){ return '<tr'+(clasesFila && clasesFila[k] ? ' class="'+clasesFila[k]+'"' : '')+'>' + f.map(function(c, i){ return celda("td", c, i); }).join("") + '</tr>'; }).join("") +
+      (pie ? '<tr class="tot">' + pie.map(function(c, i){ return celda("td", c, i); }).join("") + '</tr>' : '') +
+      '</tbody></table></div>';
+  }
+  // Barras por mes. series: [{ valores: [12], clase: "a" | "b" | "c" | function(i) }]; linea: valor de referencia (opcional).
+  function svgBarras(series, etiquetas, linea){
+    var W = 680, H = 172, base = 150, arriba = 10, n = etiquetas.length;
+    var max = linea || 0;
+    series.forEach(function(se){ se.valores.forEach(function(v){ if((Number(v) || 0) > max) max = Number(v); }); });
+    if(max <= 0) max = 1;
+    var paso = W / n, ancho = Math.min(30, paso * 0.72 / series.length);
+    var out = '<svg class="inf-graf" viewBox="0 0 '+W+' '+H+'" role="img">';
+    etiquetas.forEach(function(et, i){
+      var x0 = i * paso + (paso - ancho * series.length) / 2;
+      series.forEach(function(se, k){
+        var v = Number(se.valores[i]) || 0;
+        if(v <= 0) return;
+        var alto = v / max * (base - arriba);
+        out += '<rect class="'+(typeof se.clase === "function" ? se.clase(i) : se.clase)+'" x="'+(x0 + k * ancho).toFixed(1)+'" y="'+(base - alto).toFixed(1)+'" width="'+Math.max(2, ancho - 2).toFixed(1)+'" height="'+alto.toFixed(1)+'" rx="2"><title>'+et+': '+money.format(v)+'</title></rect>';
+      });
+      out += '<text x="'+(i * paso + paso / 2).toFixed(1)+'" y="'+(H - 5)+'" text-anchor="middle">'+et+'</text>';
+    });
+    if(linea > 0){
+      var y = (base - linea / max * (base - arriba)).toFixed(1);
+      out += '<line class="inf-linea" x1="0" x2="'+W+'" y1="'+y+'" y2="'+y+'"/>';
+    }
+    return out + '<line class="inf-eje" x1="0" x2="'+W+'" y1="'+base+'" y2="'+base+'"/></svg>';
+  }
+  function leyenda(items){
+    return '<div class="inf-leyenda">' + items.map(function(it){
+      return '<span><i style="background:'+it[0]+';'+(it[2] || '')+'"></i>'+it[1]+'</span>';
+    }).join("") + '</div>';
+  }
+  function topGastos(movs, n, conAnio){
+    var g = (movs || []).filter(function(m){ return m.categoria !== "GANANCIAS" && (Number(m.valor) || 0) > 0; })
+      .sort(function(a, b){ return (Number(b.valor) || 0) - (Number(a.valor) || 0); }).slice(0, n);
+    if(!g.length) return '<div class="inf-nota">Sin gastos registrados en el período.</div>';
+    return infTabla(["Fecha","Categoría","Detalle","Pagó","Monto"], g.map(function(m){
+      var mes = (MESES_LABEL[MESES.indexOf(String(m.mes).toUpperCase())] || "").slice(0, 3).toLowerCase();
+      return [esc(m.dia) + " " + mes, esc(m.categoria), esc(m.detalle || "—"), esc(m.persona || ""), money.format(Number(m.valor) || 0)];
+    }), 4);
+  }
+  function seccionCompartidos(d, anual){
+    var cp = resumenCompartidos(d, anual);
+    if(!cp.total && !cp.balance) return infSeccion("Gastos compartidos con Pablo", '<div class="inf-nota">Sin gastos compartidos en el período.</div>');
+    return infSeccion("Gastos compartidos con Pablo",
+      '<div class="inf-destacado '+cp.cls+'">'+cp.label+' '+money.format(Math.abs(cp.balance))+'</div>' +
+      '<div class="inf-cifras">' +
+      infCifra("Total casa", money.format(cp.total)) + infCifra("Tu mitad", money.format(cp.mitad)) +
+      infCifra("Pagaste tú", money.format(cp.pagadoPropio)) + infCifra("Pagó Pablo", money.format(cp.pagadoOtro)) +
+      '</div>' +
+      '<div class="inf-nota">De '+money.format(cp.total)+' en gastos comunes, tu mitad son '+money.format(cp.mitad)+' y Pablo pagó '+money.format(cp.pagadoOtro)+'.'+cp.notaDeuda+'</div>');
+  }
+  function seccionMetas(metas, soloConPlan){
+    if(metas === null) return infSeccion("Metas", '<div class="inf-nota">No se pudieron cargar las metas.</div>');
+    var lista = soloConPlan ? metas.filter(function(m){ return m.tipo !== "reducir" && m.falta > 0; }) : metas;
+    if(!lista.length) return infSeccion("Metas", '<div class="inf-nota">'+(metas.length ? 'No hay metas pendientes.' : 'No hay metas creadas.')+'</div>');
+    return infSeccion("Metas", infTabla(["Meta","Detalle","Avance"], lista.map(function(m){
+      var x = datosMeta(m);
+      return [esc(m.nombre), x.sub, Math.min(999, x.pct).toFixed(0) + "%"];
+    }), 2));
+  }
+
+  // ---------- Informe del mes ----------
+  function informeMes(){
+    var anio = state.year, mi = state.monthIdx;
+    var pAnio = mi === 0 ? anio - 1 : anio, pMi = mi === 0 ? 11 : mi - 1;
+    return Promise.all([
+      pedirResumen(anio, mi),
+      pedirResumen(pAnio, pMi).catch(function(){ return null; }),
+      pedirMovimientos(anio, mi),
+      pedirHistorico().catch(function(){ return null; })
+    ]).then(function(r){
+      var d = r[0], dp = r[1], movs = r[2], hist = r[3];
+      var cf = cifrasPeriodo(d, false);
+      var cfp = dp ? cifrasPeriodo(dp, false) : null;
+      var h = "";
+
+      h += infSeccion("Resumen del mes",
+        '<div class="inf-cifras">' +
+        infCifra("Presupuesto", money.format(cf.presupuesto), "incluye ahorro") +
+        infCifra("Gastado", money.format(cf.gastado), cf.hayPresupuesto ? cf.pct.toFixed(0) + "% del presupuesto" : "", cf.estado === "over" ? "neg" : "") +
+        infCifra(cf.restante >= 0 ? "Te queda" : "Te pasaste", money.format(Math.abs(cf.restante)), "", cf.restante >= 0 ? "pos" : "neg") +
+        infCifra("Sueldo", money.format(cf.sueldo)) +
+        infCifra("Ganancias", money.format(cf.ganancias)) +
+        infCifra("Ahorro", money.format(cf.ahorro)) +
+        infCifra("Disponible", money.format(cf.disponible), "sueldo + ganancias − gasto − ahorro", cf.disponible < 0 ? "neg" : "") +
+        '</div>' + proyeccionHtml(cf));
+
+      var hAnio = anioDe(hist, anio);
+      var prom = hAnio && mi > 0 ? promedioPositivos(hAnio.gastoMeses, 0, mi - 1) : 0;
+      var comp = '<div class="inf-cifras">' + infCifra("Gasto del mes", money.format(cf.gasto), "sin ahorro");
+      if(cfp) comp += infCifra(MESES_LABEL[pMi] + " " + pAnio, money.format(cfp.gasto), variacion(cf.gasto, cfp.gasto) ? variacion(cf.gasto, cfp.gasto) + "mes anterior" : "");
+      if(prom > 0) comp += infCifra("Promedio " + anio + " (ene–" + MESES_LABEL[mi - 1].slice(0, 3).toLowerCase() + ")", money.format(prom), variacion(cf.gasto, prom) + "promedio");
+      h += infSeccion("Comparación", comp + '</div>');
+
+      var prev = null;
+      if(dp){
+        var porNombre = {};
+        dp.categorias.forEach(function(c){ porNombre[String(c.nombre).trim().toUpperCase()] = Number(c.valorMes) || 0; });
+        prev = { porNombre: porNombre, ahorro: cfp.ahorro, total: cfp.gastado };
+      }
+      h += infSeccion("Categorías contra presupuesto", '<div class="inf-scroll">' + htmlTablaCategorias(argsTabla(d, cf), { prev: prev }) + '</div>' +
+        '<div class="inf-nota">Los gastos fijos que llegan justo al 100% van en verde: se pagan completos cada mes.</div>');
+
+      h += infSeccion("Los 10 gastos más grandes", topGastos(movs, 10));
+      h += seccionCompartidos(d, false);
+
+      return {
+        titulo: "Informe de " + MESES_LABEL[mi] + " " + anio,
+        sub: (movs || []).length + " movimientos registrados en el mes",
+        archivo: "Informe " + MESES_LABEL[mi] + " " + anio,
+        html: h
+      };
+    });
+  }
+
+  // ---------- Informe del año ----------
+  function informeAnio(){
+    var anio = state.year, hoy = new Date();
+    var corte = anio === hoy.getFullYear() ? hoy.getMonth() : 11;
+    return Promise.all([
+      pedirResumen(anio, state.monthIdx),
+      pedirHistorico(),
+      pedirMovimientosAnio(anio).catch(function(){ return null; }),
+      pedirMetas().catch(function(){ return null; }),
+      pedirLiquidaciones().catch(function(){ return null; }),
+    ]).then(function(r){
+      var d = r[0], hist = r[1], movs = r[2], metas = r[3];
+      var cf = cifrasPeriodo(d, true);
+      var ha = anioDe(hist, anio), hp = anioDe(hist, anio - 1);
+      var h = "";
+
+      h += infSeccion("Resumen del año",
+        '<div class="inf-cifras">' +
+        infCifra("Presupuesto anual", money.format(cf.presupuesto), "incluye ahorro") +
+        infCifra("Gastado", money.format(cf.gastado), cf.hayPresupuesto ? cf.pct.toFixed(0) + "% del presupuesto" : "", cf.estado === "over" ? "neg" : "") +
+        infCifra(cf.restante >= 0 ? "Te queda" : "Te pasaste", money.format(Math.abs(cf.restante)), "", cf.restante >= 0 ? "pos" : "neg") +
+        infCifra("Sueldo", money.format(cf.sueldo)) +
+        infCifra("Ganancias", money.format(cf.ganancias)) +
+        infCifra("Ahorro", money.format(cf.ahorro)) +
+        infCifra("Disponible", money.format(cf.disponible), "sueldo + ganancias − gasto − ahorro", cf.disponible < 0 ? "neg" : "") +
+        '</div>');
+
+      if(ha){
+        var et = MESES_LABEL.map(function(mm){ return mm.slice(0, 3); });
+        var series = [{ valores: ha.gastoMeses, clase: "a" }];
+        if(hp) series.push({ valores: hp.gastoMeses, clase: "b" });
+        var filas = [], clases = [], tot = [0, 0, 0, 0, 0];
+        for(var i = 0; i < 12; i++){
+          var su = Number(ha.sueldoMeses[i]) || 0, ga = Number(ha.gananciasMeses[i]) || 0, gs = Number(ha.gastoMeses[i]) || 0, ah = Number(ha.ahorroMeses[i]) || 0;
+          if(!su && !ga && !gs && !ah) continue;
+          var li = su + ga - gs - ah;
+          tot[0] += su; tot[1] += ga; tot[2] += gs; tot[3] += ah; tot[4] += li;
+          filas.push([MESES_LABEL[i], money.format(su), money.format(ga), money.format(gs), money.format(ah), '<span class="'+(li < 0 ? 'neg' : '')+'">'+money.format(li)+'</span>']);
+          clases.push(i > corte ? "fut" : "");
+        }
+        h += infSeccion("Mes a mes",
+          svgBarras(series, et) +
+          leyenda([["var(--accent)", "Gasto " + anio], hp ? ["var(--text-dim)", "Gasto " + (anio - 1), "opacity:.35"] : null].filter(Boolean)) +
+          infTabla(["Mes","Sueldo","Ganancias","Gasto","Ahorro","Libre"], filas, 1,
+            ["Total", money.format(tot[0]), money.format(tot[1]), money.format(tot[2]), money.format(tot[3]), money.format(tot[4])], clases) +
+          '<div class="inf-nota">Libre = sueldo + ganancias − gasto − ahorro. Gasto sin ahorro ni compra de casa.' +
+          (corte < 11 ? ' En gris, meses que aún no pasan (gastos ya anotados, como cuotas).' : '') + '</div>');
+
+        if(hp){
+          var hasta = MESES_LABEL[corte].slice(0, 3).toLowerCase();
+          function compara(nombre, arrA, arrP){
+            var a = sumaRango(arrA, 0, corte), p = sumaRango(arrP, 0, corte);
+            return infCifra(nombre, money.format(a), (p > 0 ? variacion(a, p) + (anio - 1) : "sin datos " + (anio - 1)) + " (" + money.format(p) + ")");
+          }
+          h += infSeccion("Comparación con " + (anio - 1) + " (ene–" + hasta + ")",
+            '<div class="inf-cifras">' + compara("Gasto", ha.gastoMeses, hp.gastoMeses) + compara("Sueldo", ha.sueldoMeses, hp.sueldoMeses) +
+            compara("Ahorro", ha.ahorroMeses, hp.ahorroMeses) + compara("Ganancias", ha.gananciasMeses, hp.gananciasMeses) + '</div>');
+        }
+      }
+
+      h += infSeccion("Categorías del año contra presupuesto", '<div class="inf-scroll">' + htmlTablaCategorias(argsTabla(d, cf), {}) + '</div>');
+      h += infSeccion("Los 10 gastos más grandes del año", movs ? topGastos(movs, 10) : '<div class="inf-nota">No se pudieron cargar los movimientos.</div>');
+
+      // Sueldo según liquidaciones (horas extra y bonos)
+      var liqs = (r[4] || []).filter(function(l){ return l.anio === anio; });
+      if(liqs.length){
+        var porMes = {};
+        liqs.forEach(function(l){ porMes[l.mes] = l; });
+        var tH = 0, tHM = 0, tB = 0, tS = 0, filasL = [];
+        MESES.forEach(function(mm, i){
+          var l = porMes[mm];
+          if(!l) return;
+          var b = bonosDe(l);
+          tH += Number(l.horasExtrasHoras) || 0; tHM += Number(l.horasExtrasMonto) || 0; tB += b; tS += Number(l.sueldo) || 0;
+          filasL.push([MESES_LABEL[i], money.format(l.sueldo), horasFmt(l.horasExtrasHoras) + " h", money.format(l.horasExtrasMonto), money.format(b)]);
+        });
+        h += infSeccion("Sueldo según liquidaciones",
+          '<div class="inf-cifras">' +
+          infCifra("Sueldo del año", money.format(tS), liqs.length + " liquidaci" + (liqs.length === 1 ? "ón" : "ones")) +
+          infCifra("Horas extra", horasFmt(tH) + " h", money.format(tHM)) +
+          infCifra("Bonos y aguinaldos", money.format(tB)) +
+          '</div>' +
+          infTabla(["Mes","Sueldo","Horas extra","$ horas extra","Bonos"], filasL, 1, ["Total", money.format(tS), horasFmt(tH) + " h", money.format(tHM), money.format(tB)]) +
+          '<div class="inf-nota">Sueldo = total haberes − descuentos legales (regla de la app desde 2026-09-30).</div>');
+      }
+      h += seccionCompartidos(d, true);
+      h += seccionMetas(metas, false);
+
+      return {
+        titulo: "Informe del año " + anio,
+        sub: anio === hoy.getFullYear() ? "Año en curso, con datos hasta el " + fechaHoyTexto() : "Año completo",
+        archivo: "Informe año " + anio,
+        html: h
+      };
+    });
+  }
+
+  // ---------- Proyecciones (siempre del año en curso) ----------
+  // Método simple y explicado en el mismo informe: meses cerrados = lo real;
+  // mes actual y futuros = lo mayor entre lo ya anotado y el promedio de los
+  // meses cerrados (gasto, sueldo y ahorro). Las ganancias no se proyectan.
+  function informeProyecciones(){
+    var hoy = new Date(), anio = hoy.getFullYear(), mi = hoy.getMonth();
+    return Promise.all([
+      pedirResumen(anio, mi),
+      pedirHistorico(),
+      pedirSaldos().catch(function(){ return null; }),
+      pedirMetas().catch(function(){ return null; })
+    ]).then(function(r){
+      var d = r[0], hist = r[1], saldos = r[2], metas = r[3];
+      var cfa = cifrasPeriodo(d, true);
+      var ha = anioDe(hist, anio);
+      if(!ha) throw new Error("No hay datos de " + anio + " para proyectar.");
+      var presGastoAnual = sumaCampo(cfa.visibles, "presupuestoAnual", "presupuestoMensual", true);
+      var presGastoMes = sumaCampo(cfa.visibles, "presupuestoAnual", "presupuestoMensual", false);
+      var hayCerrados = mi > 0;
+      var promG = hayCerrados ? promedioPositivos(ha.gastoMeses, 0, mi - 1) : presGastoMes;
+      var promS = hayCerrados ? promedioPositivos(ha.sueldoMeses, 0, mi - 1) : (Number(d.sueldo) || 0);
+      var promA = hayCerrados ? promedioPositivos(ha.ahorroMeses, 0, mi - 1) : (Number(d.ahorroPresupuesto) || 0);
+
+      var proyG = [], proyS = [], proyA = [], filas = [], clases = [];
+      for(var i = 0; i < 12; i++){
+        var g = Number(ha.gastoMeses[i]) || 0, su = Number(ha.sueldoMeses[i]) || 0, ah = Number(ha.ahorroMeses[i]) || 0;
+        var cerrado = i < mi;
+        var pg = cerrado ? g : Math.max(g, promG);
+        var ps = cerrado ? su : (su > 0 ? su : promS);
+        var pa = cerrado ? ah : Math.max(ah, promA);
+        proyG.push(pg); proyS.push(ps); proyA.push(pa);
+        filas.push([MESES_LABEL[i] + (i === mi ? " (en curso)" : ""), cerrado ? "real" : (g > 0 ? "anotado " + money.format(g) : "—"), money.format(pg), money.format(ps), money.format(pa)]);
+        clases.push(cerrado ? "" : "fut");
+      }
+      var tG = sumaRango(proyG, 0, 11), tS = sumaRango(proyS, 0, 11), tA = sumaRango(proyA, 0, 11);
+      var tGan = sumaRango(ha.gananciasMeses, 0, 11);
+      var libre = tS + tGan - tG - tA;
+      var metaAhorro = Number(d.ahorroPresupuestoAnual) || 0;
+      var h = "";
+
+      h += infSeccion("Cierre del año al ritmo actual",
+        '<div class="inf-cifras">' +
+        infCifra("Gasto proyectado", money.format(tG), presGastoAnual > 0 ? (tG > presGastoAnual ? "te pasarías por " + money.format(tG - presGastoAnual) : "bajo el presupuesto por " + money.format(presGastoAnual - tG)) : "sin presupuesto", presGastoAnual > 0 && tG > presGastoAnual ? "neg" : "") +
+        infCifra("Presupuesto de gastos", money.format(presGastoAnual), "sin ahorro") +
+        infCifra("Sueldo proyectado", money.format(tS)) +
+        infCifra("Ahorro proyectado", money.format(tA), metaAhorro > 0 ? (tA >= metaAhorro ? "cumple la meta de " + money.format(metaAhorro) : "faltarían " + money.format(metaAhorro - tA) + " para la meta") : "", metaAhorro > 0 ? (tA >= metaAhorro ? "pos" : "neg") : "") +
+        infCifra("Libre al cierre", money.format(libre), "sueldo + ganancias − gasto − ahorro", libre < 0 ? "neg" : "pos") +
+        '</div>' +
+        svgBarras([{ valores: proyG, clase: function(i){ return i < mi ? "a" : "c"; } }],
+          MESES_LABEL.map(function(mm){ return mm.slice(0, 3); }), presGastoMes) +
+        leyenda([["var(--accent)", "Gasto real"], ["var(--accent)", "Gasto proyectado", "opacity:.35"], ["var(--red)", "Presupuesto mensual de gastos (este mes)", "height:2px;border-radius:0"]]) +
+        infTabla(["Mes","Base","Gasto","Sueldo","Ahorro"], filas, 2, ["Total " + anio, "", money.format(tG), money.format(tS), money.format(tA)], clases) +
+        '<div class="inf-nota">Cómo se calcula: los meses cerrados usan lo real. Para el mes en curso y los que vienen se usa lo mayor entre lo ya anotado y el promedio de los meses cerrados ' +
+        '(gasto ' + money.format(promG) + ', sueldo ' + money.format(promS) + ', ahorro ' + money.format(promA) + ' por mes). Las ganancias no se proyectan: se cuentan solo las ya registradas (' + money.format(tGan) + ').</div>');
+
+      // Gastos ya anotados a futuro (cuotas y compras cargadas por adelantado)
+      var fut = [];
+      (hist || []).forEach(function(a){
+        if(a.anio < anio) return;
+        (a.gastoMeses || []).forEach(function(v, i){
+          if(a.anio === anio && i <= mi) return;
+          if((Number(v) || 0) > 0) fut.push([MESES_LABEL[i] + " " + a.anio, money.format(v)]);
+        });
+      });
+      h += infSeccion("Gastos ya anotados a futuro", fut.length
+        ? infTabla(["Mes","Ya anotado"], fut, 1) + '<div class="inf-nota">Cuotas y compras cargadas por adelantado (son el piso de esos meses en la proyección).</div>'
+        : '<div class="inf-nota">No hay gastos anotados para los próximos meses.</div>');
+
+      if(saldos && saldos.cuentas && saldos.cuentas.length){
+        var fm = saldos.fondoEmergenciaMeses;
+        h += infSeccion("Patrimonio y fondo de emergencia",
+          '<div class="inf-cifras">' +
+          infCifra("Patrimonio neto", money.format(saldos.patrimonioNeto), "activos " + money.format(saldos.activos) + " − deudas " + money.format(saldos.pasivos), saldos.patrimonioNeto < 0 ? "neg" : "") +
+          infCifra("Efectivo", money.format(saldos.efectivo)) +
+          infCifra("Gasto promedio mensual", money.format(saldos.gastoPromedioMensual)) +
+          infCifra("Fondo de emergencia", fm === null ? "—" : fm.toFixed(1).replace(".", ",") + " meses", "efectivo ÷ gasto promedio", fm !== null && fm < 3 ? "neg" : (fm !== null && fm >= 6 ? "pos" : "")) +
+          '</div><div class="inf-nota">La app lo marca en verde desde 6 meses de gastos cubiertos y en ámbar entre 3 y 6.</div>');
+      } else {
+        h += infSeccion("Patrimonio y fondo de emergencia", '<div class="inf-nota">Sin cuentas cargadas en Saldos (Metas → Patrimonio): no se puede calcular el fondo de emergencia.</div>');
+      }
+
+      h += seccionMetas(metas, true);
+
+      return {
+        titulo: "Proyecciones " + anio,
+        sub: "Calculadas el " + fechaHoyTexto() + " con " + mi + " mes" + (mi === 1 ? "" : "es") + " cerrado" + (mi === 1 ? "" : "s"),
+        archivo: "Proyecciones " + anio,
+        html: h
+      };
+    });
+  }
+
+  // ---------- Informe completo: mes + año + proyecciones en un solo PDF ----------
+  // Cada parte parte en una página nueva al imprimir. Se arman una tras otra
+  // (no en paralelo) para no pedirle a la API ~30 consultas al mismo tiempo.
+  function informeCompleto(){
+    var partes = [];
+    function parte(n, r, salto){
+      return '<div class="inf-parte'+(salto ? ' salto' : '')+'">'+n+'. '+r.titulo+'<span class="s">'+r.sub+'</span></div>' + r.html;
+    }
+    return informeMes().then(function(r){ partes.push(parte(1, r, false)); return informeAnio(); })
+      .then(function(r){ partes.push(parte(2, r, true)); return informeProyecciones(); })
+      .then(function(r){
+        partes.push(parte(3, r, true));
+        return {
+          titulo: "Informe completo · " + MESES_LABEL[state.monthIdx] + " " + state.year,
+          sub: "1. Mes · 2. Año " + state.year + " · 3. Proyecciones " + new Date().getFullYear(),
+          archivo: "Informe completo " + MESES_LABEL[state.monthIdx] + " " + state.year,
+          html: partes.join("")
+        };
+      });
+  }
+
+  function actualizarTextoInforme(){
+    document.querySelectorAll("#informeTipos button").forEach(function(b){ b.classList.toggle("active", b.dataset.tipo === informeTipo); });
+    var t;
+    if(informeTipo === "todo") t = "Todo en un solo PDF, cada parte en su página: 1) el mes de " + MESES_LABEL[state.monthIdx] + " " + state.year + ", 2) el año " + state.year + " y 3) las proyecciones de " + new Date().getFullYear() + ".";
+    else if(informeTipo === "mes") t = MESES_LABEL[state.monthIdx] + " " + state.year + ": cifras del mes, comparación con el mes anterior y el promedio, categorías contra presupuesto, los 10 gastos más grandes y lo compartido con Pablo.";
+    else if(informeTipo === "anio") t = "Año " + state.year + ": totales, mes a mes con gráfico, comparación con " + (state.year - 1) + ", categorías del año, los 10 gastos más grandes" + ", horas extra y bonos" + ", compartidos y metas.";
+    else t = "Año " + new Date().getFullYear() + ": cómo cerrarías el año al ritmo actual, gastos ya anotados a futuro, ahorro contra la meta, fondo de emergencia y metas pendientes.";
+    if(informeTipo !== "proy") t += " Para otro período, cámbialo arriba (‹ › y Mes/Año) antes de abrir esto.";
+    $("informeDesc").textContent = t;
+  }
+  function openInformeSheet(){
+    informeTipo = "todo";
+    actualizarTextoInforme();
+    $("informeBackdrop").classList.add("show");
+    $("informeSheet").classList.add("show");
+  }
+  function closeInformeSheet(){
+    $("informeBackdrop").classList.remove("show");
+    $("informeSheet").classList.remove("show");
+  }
+  function cerrarInforme(){
+    $("informe").style.display = "none";
+    document.body.classList.remove("con-informe");
+    document.title = tituloOriginal;
+  }
+  function generarInforme(){
+    var btn = $("informeGenerarBtn");
+    btn.disabled = true;
+    btn.textContent = (informeTipo === "anio" || informeTipo === "todo") ? "Generando… (puede tardar unos segundos)" : "Generando…";
+    var f = { todo: informeCompleto, mes: informeMes, anio: informeAnio, proy: informeProyecciones }[informeTipo];
+    f().then(function(r){
+      $("informeDoc").innerHTML =
+        '<div class="inf-cab"><div><div class="inf-app">Cuentas Personales</div><h1>'+r.titulo+'</h1><div class="inf-sub">'+r.sub+'</div></div>' +
+        '<div class="inf-meta">Generado el '+fechaHoyTexto()+'<br>Cuentas Personales · versión '+APP_VERSION+'</div></div>' +
+        r.html +
+        '<div class="inf-pie">Montos en pesos chilenos. Cifras calculadas con las mismas reglas de la app (Presupuesto y Gastado incluyen el ahorro; el gasto no incluye la compra de casa ni resta las ganancias).</div>';
+      closeInformeSheet();
+      $("informe").style.display = "block";
+      $("informe").scrollTop = 0;
+      document.body.classList.add("con-informe");
+      document.title = r.archivo + " - Cuentas Personales";
+    }).catch(function(err){
+      showToast("No se pudo armar el informe: " + err.message, "err");
+    }).then(function(){
+      btn.disabled = false;
+      btn.textContent = "Generar informe";
+    });
+  }
+  $("informeBtn").onclick = openInformeSheet;
+  $("closeInformeSheet").onclick = closeInformeSheet;
+  $("informeBackdrop").onclick = closeInformeSheet;
+  document.querySelectorAll("#informeTipos button").forEach(function(b){
+    b.onclick = function(){ informeTipo = b.dataset.tipo; actualizarTextoInforme(); };
+  });
+  $("informeGenerarBtn").onclick = generarInforme;
+  $("informeImprimir").onclick = function(){ window.print(); };
+  $("informeCerrar").onclick = cerrarInforme;
 
   // ====== Configuración (URL + token) ======
   function showSetup(){
