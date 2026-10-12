@@ -491,6 +491,48 @@
   .setup-overlay .submit-btn{margin-top:22px;}
   .app-version{text-align:center;color:var(--text-dim);font-size:12px;margin:28px 0 0;}
 
+  /* ---------- Escritorio "Hoja de cálculo" (2026-10-12) ----------
+     En el celular los envoltorios del Resumen no existen para el layout
+     (display:contents) y lo marcado .solo-escritorio no se muestra. */
+  .app-brand{display:none;}
+  .res-tend,.res-cats,.res-movs,.res-casa{display:contents;}
+  .solo-escritorio{display:none;}
+  .cat-tabla{width:100%;border-collapse:collapse;font-size:13.5px;font-variant-numeric:tabular-nums;}
+  .cat-tabla th{
+    font-size:11px;font-weight:800;color:var(--text-dim);text-transform:uppercase;letter-spacing:.4px;
+    text-align:right;padding:13px 10px 10px;border-bottom:1px solid var(--border);white-space:nowrap;
+    cursor:pointer;user-select:none;-webkit-user-select:none;
+  }
+  .cat-tabla th.sin-orden{cursor:default;}
+  .cat-tabla th.orden{color:var(--accent);}
+  .cat-tabla th:first-child,.cat-tabla td:first-child{text-align:left;}
+  .cat-tabla td{padding:7px 10px;border-bottom:1px solid var(--border);text-align:right;white-space:nowrap;}
+  .cat-tabla td.g{font-weight:800;}
+  .cat-tabla .over{color:var(--red);}
+  .cat-tabla .dim{color:var(--text-dim);}
+  .cat-tabla tr.grp td{
+    background:var(--surface-2);font-size:11px;font-weight:800;color:var(--text-dim);text-transform:uppercase;
+    letter-spacing:.5px;text-align:left;padding:8px 12px;
+  }
+  .cat-tabla tr.tot td{font-weight:800;border-bottom:none;border-top:2px solid var(--text);padding-top:11px;padding-bottom:11px;}
+  .cat-tabla tbody tr:not(.grp):not(.tot):hover td{background:var(--accent-soft);}
+  .ct-cat{display:flex;align-items:center;gap:10px;font-weight:700;max-width:230px;}
+  .ct-cat span.n{min-width:0;overflow:hidden;text-overflow:ellipsis;}
+  .ct-cat .cat-ico.sm{width:28px;height:28px;border-radius:9px;font-size:14px;}
+  .ct-pct{display:inline-block;min-width:48px;padding:3px 7px;border-radius:8px;font-size:12px;font-weight:800;text-align:center;background:var(--surface-2);}
+  .ct-pct.ok{background:var(--green-soft);color:var(--green);}
+  .ct-pct.warn{background:var(--amber-soft);color:var(--amber);}
+  .ct-pct.over{background:var(--red-soft);color:var(--red);}
+  .ct-bar{width:100px;min-width:80px;}
+  .ct-bar .bar-track{margin:0;height:7px;}
+  .res-mov{display:flex;align-items:center;gap:11px;padding:10px 0;border-bottom:1px solid var(--border);}
+  .res-mov:last-child{border-bottom:none;}
+  .res-mov-body{flex:1;min-width:0;}
+  .res-mov-d{font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .res-mov-s{font-size:11.5px;color:var(--text-dim);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .res-mov-v{font-size:13.5px;font-weight:800;white-space:nowrap;}
+  .res-mov-v.pos{color:var(--green);}
+
   /* =========================================================
      Rediseño "Claro Esencial" (2026-09-28, opción 1 elegida por
      Angel). Solo capa visual + mejoras de lectura: los números salen
@@ -609,63 +651,101 @@
   .keypad button:active{background:var(--border);}
 
   /* =========================================================
-     DESKTOP (>= 900px): layout ancho, sidebar de navegación,
-     grid de dos columnas en vez de todo apilado en una columna
-     angosta flotando en medio de la pantalla.
+     DESKTOP (>= 1000px) — diseño "Hoja de cálculo" (2026-10-12, elegido por
+     Angel entre 3 opciones). Barra superior con marca + pestañas + período +
+     Nuevo + ⚙/↻ (sin barra lateral) y el Resumen como tabla ancha de
+     categorías con una columna a la derecha. El celular no cambia.
+     header, su envoltorio, .header-top y nav.bottom pasan a display:contents
+     para que sus botones sean celdas de la fila 1 de la grilla de #app
+     (columna fija para marca/período/Nuevo/⚙↻; las pestañas llenan las del medio). Desde 1000px (antes 900px): bajo eso
+     la barra superior no cabe y se usa el diseño del celular.
      ========================================================= */
-  @media (min-width:900px){
-    body{display:flex;justify-content:center;}
+  @media (min-width:1000px){
+    body{
+      background:linear-gradient(var(--surface),var(--surface)) 0 0/100% 64px no-repeat,
+                 linear-gradient(var(--border),var(--border)) 0 64px/100% 1px no-repeat,
+                 var(--bg);
+    }
     #app{
-      max-width:1180px;width:100%;min-height:100vh;
-      display:grid;grid-template-columns:220px 1fr;grid-template-rows:auto 1fr;
-      column-gap:24px;padding:24px 24px 24px 0;
+      max-width:1320px;width:100%;margin:0 auto;min-height:100vh;background:transparent;
+      display:grid;grid-template-columns:auto repeat(5,auto) minmax(0,1fr) auto auto;
+      grid-template-rows:64px auto;align-items:center;padding:0 28px;
     }
-    header{
-      grid-column:1 / -1;grid-row:1;padding:22px 4px 14px;
-      display:flex;align-items:center;justify-content:space-between;gap:24px;
-      background:var(--bg);
-    }
-    .header-top{margin-bottom:0;flex:0 0 auto;}
-    .app-name{font-size:30px;}
-    .period-nav{flex:0 0 auto;min-width:360px;}
-
-    nav.bottom{
-      position:static;grid-column:1;grid-row:2;max-width:none;flex-direction:column;
-      align-items:stretch;justify-content:flex-start;gap:8px;background:transparent;border:none;
-      padding:20px 0 0;height:fit-content;
+    header, header > div, .header-top, nav.bottom{display:contents;}
+    #viewTitle{display:none;}
+    .app-brand{
+      display:block;grid-row:1;grid-column:1;margin-right:22px;white-space:nowrap;
+      font-size:17px;font-weight:800;letter-spacing:-.3px;color:var(--text);
     }
     nav.bottom button{
-      flex-direction:row;justify-content:flex-start;gap:12px;padding:12px 16px;
-      border-radius:14px;background:var(--surface);border:1px solid var(--border);
-      box-shadow:var(--shadow);flex:none;font-size:13.5px;
+      grid-row:1;height:64px;flex-direction:row;padding:0 14px;border-radius:0;
+      border-top:3px solid transparent;border-bottom:3px solid transparent;
+      font-size:14px;font-weight:650;color:var(--text-dim);
     }
-    nav.bottom button .nav-pill{padding:0;background:none;border-radius:0;}
-    nav.bottom button.active{background:var(--accent);border-color:var(--accent);color:#fff;}
-    nav.bottom button.active .nav-pill{background:none;}
+    nav.bottom button .nav-pill{display:none;}
+    nav.bottom button:hover{color:var(--text);}
+    nav.bottom button.active{color:var(--text);border-bottom-color:var(--accent);}
+    .period-nav{grid-row:1;grid-column:7;justify-self:end;gap:6px;}
+    .period-label{min-width:120px;color:var(--text);}
+    .period-spacer{flex:0 0 8px;}
     nav.bottom .fab{
-      position:static;order:-1;margin:0 0 4px;width:100%;height:48px;border-radius:14px;
-      justify-content:center;font-size:14px;
+      grid-row:1;grid-column:8;position:static;height:40px;min-height:0;margin-left:14px;padding:0 16px;
+      border-radius:12px;border:none;box-shadow:none;
     }
+    .header-top > div{grid-row:1;grid-column:9;margin-left:10px;}
+    main{grid-column:1 / -1;grid-row:2;align-self:start;padding:22px 0 40px;}
 
-    main{grid-column:2;grid-row:2;padding:14px 0 40px;}
     .stat-scroll{
       grid-template-columns:repeat(auto-fit,minmax(150px,1fr));margin:0 0 20px;
     }
-    .hero-card{max-width:520px;}
-    .left-card{max-width:620px;}
-    .stat-row{max-width:620px;}
+    .hero-card{max-width:620px;}
     .stat-mini .v .short{display:none;}
     .stat-mini .v .full{display:inline;}
     .people-grid{grid-template-columns:repeat(auto-fit,minmax(180px,1fr));}
     .budget-card-grid{grid-template-columns:repeat(auto-fit,minmax(200px,1fr));}
 
-    .resumen-grid{display:grid;grid-template-columns:1.6fr 1fr;gap:20px;align-items:start;}
+    /* Resumen: fila de cifras arriba; tabla a la izquierda; a la derecha
+       "te queda", gasto mes a mes, últimos movimientos y compra de casa.
+       La última fila es 1fr para que la tabla (que abarca todas las filas)
+       no meta espacio entre las tarjetas de la derecha. */
+    #viewResumen.active{
+      display:grid;grid-template-columns:minmax(0,1fr) 340px;column-gap:22px;align-items:start;
+      grid-template-rows:auto auto auto auto auto 1fr;
+      grid-template-areas:"kpis kpis" "cats hero" "cats tend" "cats movs" "cats casa" "cats .";
+    }
+    #statScroll{grid-area:kpis;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:20px;}
+    #statScroll .stat-mini{padding:13px 15px;}
+    #statScroll .stat-mini .l{font-size:12px;}
+    #statScroll .stat-mini .v{font-size:19px;margin-top:5px;}
+    #resumenHero{grid-area:hero;}
+    .res-tend{grid-area:tend;}
+    .res-cats{grid-area:cats;}
+    .res-movs{grid-area:movs;}
+    .res-casa{grid-area:casa;}
+    .res-tend,.res-cats,.res-movs,.res-casa{display:block;}
+    .solo-escritorio{display:block;}
+    .res-movs.oculto{display:none;}
+    .res-cats > .section-title{margin-top:0;}
+    .res-cats > .cat-group-title, #catFijos, #catVariables{display:none;}
+    #catTabla{padding:2px 8px 6px;overflow-x:auto;}
 
     .sheet{
       left:50%;top:50%;bottom:auto;transform:translate(-50%,-50%) scale(.95);
       width:460px;max-height:85vh;border-radius:24px;opacity:0;pointer-events:none;transition:opacity .2s, transform .2s;
     }
     .sheet.show{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto;}
+  }
+  /* Escritorio angosto (laptop chica / ventana a medio ancho): columna derecha
+     más chica, sin la marca, cifras más chicas y sin las columnas barra y "Acumulado". */
+  @media (min-width:1000px) and (max-width:1279px){
+    #app{padding:0 18px;}
+    .app-brand{display:none;}
+    nav.bottom button{padding:0 9px;font-size:13px;}
+    .period-label{min-width:100px;}
+    .ct-bar{display:none;}
+    #viewResumen.active{grid-template-columns:minmax(0,1fr) 300px;column-gap:16px;}
+    #statScroll .stat-mini .v{font-size:15px;}
+    .ct-acum{display:none;}
   }
 </style>
 </head>
@@ -675,6 +755,7 @@
   <header>
     <div>
       <div class="header-top">
+        <span class="app-brand">Cuentas Personales</span>
         <span class="app-name" id="viewTitle">Resumen</span>
         <div style="display:flex;gap:8px;">
           <button class="icon-btn" id="settingsBtn" title="Configuración">
@@ -706,17 +787,29 @@
         <div class="stat-mini"><div class="l">Sueldo</div><div class="v skeleton" style="height:16px;margin:4px 8px 0;">&nbsp;</div></div>
       </div>
 
+      <div class="res-tend">
       <div class="section-title">Gasto mes a mes <span class="tag" id="tendenciaTag"></span></div>
       <div class="card" style="padding:10px 16px;" id="tendenciaCard"></div>
+      </div>
 
+      <div class="res-cats">
       <div class="section-title">Categorías <button class="link-btn" id="addCatBtn">+ Nueva categoría</button></div>
       <div class="cat-group-title">Gastos fijos</div>
       <div class="card cat-list" id="catFijos"></div>
       <div class="cat-group-title">Gastos variables</div>
       <div class="card cat-list" id="catVariables"></div>
+      <div class="card solo-escritorio" id="catTabla"></div>
+      </div>
 
+      <div class="res-movs solo-escritorio">
+      <div class="section-title">Últimos movimientos <button class="link-btn" id="resVerHistorial">Ver historial</button></div>
+      <div class="card" style="padding:2px 16px;" id="resMovs"></div>
+      </div>
+
+      <div class="res-casa">
       <div class="section-title">Compra de casa <span class="tag">aparte del gasto normal</span></div>
       <div class="card"><div id="compraCasaCard"></div></div>
+      </div>
     </div>
 
     <div class="view" id="viewHistorial">
@@ -1167,8 +1260,8 @@
   // Versión de la app: subirla en CADA cambio de la app (frontend o backend)
   // y anotarla en el "Registro de cambios" de FUNCIONES_APP.md (columna Versión).
   // Se muestra al pie de cada pestaña y en la pantalla de configuración.
-  var APP_VERSION = "2.4";
-  var APP_VERSION_FECHA = "2026-10-06";
+  var APP_VERSION = "2.5";
+  var APP_VERSION_FECHA = "2026-10-12";
 
   var MESES = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
   var MESES_LABEL = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -1308,7 +1401,7 @@
         // Cualquier escritura puede cambiar el histórico (gasto/ahorro/ingresos mes a
         // mes, histórico por año). Se invalida el caché para que el próximo render lo
         // vuelva a pedir en vez de mostrar números viejos.
-        if(json && json.ok) state.historico = null;
+        if(json && json.ok){ state.historico = null; movsResumen.clave = ""; }
         return json;
       });
   }
@@ -1388,6 +1481,9 @@
     });
 
     $("statScroll").innerHTML =
+      // Presupuesto y Gastado solo en escritorio (en el celular ya están en la tarjeta de arriba).
+      statMini("Presupuesto", presupuestoTotal, "", "", "solo-escritorio") +
+      statMini("Gastado", gastoTotal, estGasto === "over" ? "neg" : "", "", "solo-escritorio") +
       statMini("Sueldo", sueldo) +
       statMini("Ganancias", ganancias, ganancias > 0 ? "pos" : "", ganancias > 0 ? "+" : "") +
       statMini("Ahorro", ahorro, ahorro > 0 ? "pos" : "") +
@@ -1413,6 +1509,16 @@
     $("catFijos").innerHTML = fijos.map(function(c){ return catLine(c, anual); }).join("") || '<div class="empty-note">Sin categorías fijas.</div>';
     $("catVariables").innerHTML = variables.map(function(c){ return catLine(c, anual); }).join("") || '<div class="empty-note">Sin categorías variables.</div>';
 
+    // Escritorio: las mismas categorías en tabla (las listas de arriba se ocultan ahí).
+    tablaArgs = {
+      anual: anual, fijos: fijos, variables: variables,
+      ahorro: ahorro, ahorroMeta: ahorroPresMeta,
+      ahorroAnual: Number(d.ahorroAnual) || 0, gastoAnual: (Number(d.subTotalAnual) || 0) + (Number(d.ahorroAnual) || 0),
+      presupuesto: presupuestoTotal, gastado: gastoTotal, restante: restante, pct: pctGasto, estado: estGasto
+    };
+    renderTablaCategorias();
+    renderResumenMovs();
+
     var compraCasa = d.categorias.find(function(c){ return c.nombre === "Compra de casa"; });
     if(compraCasa){
       var valorCasa = anual ? compraCasa.totalAnual : compraCasa.valorMes;
@@ -1427,21 +1533,36 @@
     }
   }
 
-  function catLine(c, anual){
-    var valor = anual ? c.totalAnual : c.valorMes;
-    var presupuesto = anual ? c.presupuestoAnual : c.presupuestoMensual;
+  // Monto, presupuesto, % y estado de una categoría (lo usan la lista del
+  // celular y la tabla de escritorio, para que nunca muestren cosas distintas).
+  function datosMonto(valor, presupuesto, esFijo){
+    valor = Number(valor) || 0;
+    presupuesto = Number(presupuesto) || 0;
     var hayPres = presupuesto > 0;
     var pctReal = hayPres ? (valor/presupuesto)*100 : 0;
-    var pctBarra = hayPres ? Math.min(100, pctReal) : (valor > 0 ? 100 : 0);
     var estado = estadoPct(pctReal, hayPres);
     // Un gasto fijo llega al 100% todos los meses por diseño (se paga completo):
     // mientras no se pase, va en verde y no en ámbar de "cuidado".
-    if(hayPres && c.tipo === "FIJO" && Math.round(valor) <= Math.round(presupuesto)) estado = "ok";
-    // Redondeado al peso: sin esto, arrastres de coma flotante de fórmulas
-    // encadenadas (ej. las categorías compartidas usan "/2") podían mostrar
-    // "Te pasaste $0" en vez de "Justo en el presupuesto" (bug cosmético
-    // encontrado en la auditoría del 2026-08-30).
-    var restante = Math.round(presupuesto - valor);
+    if(hayPres && esFijo && Math.round(valor) <= Math.round(presupuesto)) estado = "ok";
+    return {
+      valor: valor, presupuesto: presupuesto, hayPres: hayPres, pctReal: pctReal,
+      pctBarra: hayPres ? Math.min(100, pctReal) : (valor > 0 ? 100 : 0),
+      estado: estado,
+      // Redondeado al peso: sin esto, arrastres de coma flotante de fórmulas
+      // encadenadas (ej. las categorías compartidas usan "/2") podían mostrar
+      // "Te pasaste $0" en vez de "Justo en el presupuesto" (bug cosmético
+      // encontrado en la auditoría del 2026-08-30).
+      restante: Math.round(presupuesto - valor)
+    };
+  }
+  function datosCat(c, anual){
+    return datosMonto(anual ? c.totalAnual : c.valorMes, anual ? c.presupuestoAnual : c.presupuestoMensual, c.tipo === "FIJO");
+  }
+
+  function catLine(c, anual){
+    var x = datosCat(c, anual);
+    var valor = x.valor, presupuesto = x.presupuesto, hayPres = x.hayPres;
+    var pctReal = x.pctReal, pctBarra = x.pctBarra, estado = x.estado, restante = x.restante;
 
     var sub = hayPres
       ? (restante > 0
@@ -1463,6 +1584,138 @@
       '</div></div></div>';
   }
 
+  // ====== Escritorio: tabla de categorías (diseño "Hoja de cálculo", 2026-10-12) ======
+  // Misma información que las listas Fijos/Variables del celular, en columnas.
+  // Fila AHORRO + fila Total: el total es el mismo Presupuesto/Gastado del
+  // Resumen y de Presupuesto (ambos incluyen el ahorro, regla del 2026-09-13).
+  // Clic en un título ordena dentro de cada grupo; otro clic invierte.
+  var tablaOrden = { k: "", dir: 1 };
+  var tablaArgs = null;
+
+  function renderTablaCategorias(){
+    var caja = $("catTabla");
+    if(!caja || !tablaArgs) return;
+    var a = tablaArgs, anual = a.anual;
+    var cols = [["n","Categoría"],["p","Presupuesto"],["g","Gastado"],["d","Disponible"],["x","% usado"],["b",""]];
+    if(!anual) cols.push(["t","Acumulado " + state.year]);
+
+    function clave(c){
+      var x = datosCat(c, anual);
+      if(tablaOrden.k === "n") return String(c.nombre).toLowerCase();
+      if(tablaOrden.k === "p") return x.presupuesto;
+      if(tablaOrden.k === "g") return x.valor;
+      if(tablaOrden.k === "d") return x.hayPres ? x.restante : -1e15;
+      if(tablaOrden.k === "x") return x.hayPres ? x.pctReal : -1;
+      if(tablaOrden.k === "t") return Number(c.totalAnual) || 0;
+      return 0;
+    }
+    function ordenar(lista){
+      if(!tablaOrden.k) return lista;
+      return lista.slice().sort(function(p, q){
+        var u = clave(p), v = clave(q);
+        return (u > v ? 1 : (u < v ? -1 : 0)) * tablaOrden.dir;
+      });
+    }
+    function celdas(x, acum){
+      return '<td>'+(x.hayPres ? money.format(x.presupuesto) : '<span class="dim">—</span>')+'</td>' +
+        '<td class="g'+(x.estado === "over" ? " over" : "")+'">'+money.format(x.valor)+'</td>' +
+        '<td'+(x.hayPres && x.restante < 0 ? ' class="over"' : '')+'>'+(x.hayPres ? money.format(x.restante) : '<span class="dim">—</span>')+'</td>' +
+        '<td>'+(x.hayPres ? '<span class="ct-pct '+x.estado+'">'+x.pctReal.toFixed(0)+'%</span>' : '<span class="dim">—</span>')+'</td>' +
+        '<td class="ct-bar">'+(x.hayPres ? '<div class="bar-track"><div class="bar-fill" style="width:'+x.pctBarra+'%;background:'+colorEstado(x.estado)+'"></div></div>' : '')+'</td>' +
+        (anual ? '' : '<td class="ct-acum">'+(acum === null ? '' : money.format(acum))+'</td>');
+    }
+    function fila(nombre, x, acum){
+      return '<tr><td><div class="ct-cat">'+catIcon(nombre, 'sm')+'<span class="n">'+esc(nombre)+'</span></div></td>'+celdas(x, acum)+'</tr>';
+    }
+    function grupo(titulo, lista){
+      if(!lista.length) return '';
+      var g = sumaCampo(lista, "totalAnual", "valorMes", anual), p = sumaCampo(lista, "presupuestoAnual", "presupuestoMensual", anual);
+      return '<tr class="grp"><td colspan="'+cols.length+'">'+titulo+' · '+money.format(g)+' de '+money.format(p)+'</td></tr>' +
+        ordenar(lista).map(function(c){ return fila(c.nombre, datosCat(c, anual), Number(c.totalAnual) || 0); }).join("");
+    }
+
+    if(!a.fijos.length && !a.variables.length){
+      caja.innerHTML = '<div class="empty-note">Sin categorías.</div>';
+      return;
+    }
+    var ahorroX = datosMonto(a.ahorro, a.ahorroMeta, false);
+    // Ahorrar más de la meta no es "pasarse": el ahorro con meta siempre va en verde.
+    if(ahorroX.hayPres) ahorroX.estado = "ok";
+    var totalX = {
+      valor: a.gastado, presupuesto: a.presupuesto, hayPres: a.presupuesto > 0, pctReal: a.pct,
+      pctBarra: Math.min(100, a.pct), estado: a.estado, restante: Math.round(a.restante)
+    };
+
+    caja.innerHTML = '<table class="cat-tabla"><thead><tr>' +
+      cols.map(function(c){
+        if(c[0] === "b") return '<th class="sin-orden ct-bar"></th>';
+        var on = tablaOrden.k === c[0];
+        return '<th data-k="'+c[0]+'" class="'+(c[0] === "t" ? 'ct-acum' : '')+(on ? ' orden' : '')+'" title="Ordenar">'+c[1]+(on ? (tablaOrden.dir > 0 ? ' ↑' : ' ↓') : '')+'</th>';
+      }).join("") +
+      '</tr></thead><tbody>' +
+      grupo("Gastos fijos", a.fijos) +
+      grupo("Gastos variables", a.variables) +
+      ((a.ahorro || a.ahorroMeta) ? '<tr class="grp"><td colspan="'+cols.length+'">Ahorro</td></tr>' + fila("AHORRO", ahorroX, a.ahorroAnual) : '') +
+      '<tr class="tot"><td>Total</td>' + celdas(totalX, a.gastoAnual) + '</tr>' +
+      '</tbody></table>';
+  }
+
+  $("catTabla").addEventListener("click", function(e){
+    var th = e.target.closest ? e.target.closest("th[data-k]") : null;
+    if(!th) return;
+    var k = th.getAttribute("data-k");
+    if(tablaOrden.k === k) tablaOrden.dir = -tablaOrden.dir;
+    else { tablaOrden.k = k; tablaOrden.dir = (k === "n") ? 1 : -1; }
+    renderTablaCategorias();
+  });
+
+  // ====== Escritorio: últimos movimientos del mes en el Resumen ======
+  // Solo se piden en pantallas de escritorio (en el celular la tarjeta no se
+  // muestra) y una vez por mes visto; cualquier escritura invalida (apiPost).
+  // En modo Año se oculta: habría que pedir los 12 meses.
+  var movsResumen = { clave: "", lista: null, cargando: "" };
+  var mqEscritorio = window.matchMedia ? window.matchMedia("(min-width:1000px)") : null;
+  function esEscritorio(){ return !!(mqEscritorio && mqEscritorio.matches); }
+
+  function dibujarMovsResumen(){
+    var lista = (movsResumen.lista || []).slice(0, 6);
+    $("resMovs").innerHTML = lista.map(function(m){
+      var esGanancia = m.categoria === "GANANCIAS";
+      var sub = [esc(m.categoria)];
+      if(m.persona && m.persona !== "Propio") sub.push(esc(m.persona));
+      if(m.banco) sub.push(esc(m.banco));
+      sub.push(esc(m.dia) + " " + (MESES_LABEL[MESES.indexOf(String(m.mes).toUpperCase())] || "").slice(0, 3).toLowerCase());
+      return '<div class="res-mov">' + catIcon(m.categoria, 'sm') +
+        '<div class="res-mov-body"><div class="res-mov-d">'+esc(m.detalle || m.categoria)+'</div>' +
+        '<div class="res-mov-s">'+sub.join(" · ")+'</div></div>' +
+        '<div class="res-mov-v'+(esGanancia ? ' pos' : '')+'">'+(esGanancia ? '+' : '')+money.format(Number(m.valor) || 0)+'</div></div>';
+    }).join("") || '<div class="empty-note">Sin movimientos este mes.</div>';
+  }
+
+  function renderResumenMovs(){
+    var caja = $("resMovs");
+    if(!caja) return;
+    caja.parentNode.classList.toggle("oculto", esAnual());
+    if(esAnual() || !esEscritorio()) return;
+    var clave = state.year + "_" + MESES[state.monthIdx];
+    if(movsResumen.clave === clave && movsResumen.lista){ dibujarMovsResumen(); return; }
+    if(movsResumen.cargando === clave) return;
+    movsResumen.cargando = clave;
+    caja.innerHTML = '<div class="empty-note">Cargando…</div>';
+    apiGet({ accion: "movimientos", anio: state.year, mes: MESES[state.monthIdx] }).then(function(json){
+      if(!json.ok) throw new Error(json.error || "Error desconocido");
+      movsResumen = { clave: clave, lista: json.movimientos || [], cargando: "" };
+      if(clave === state.year + "_" + MESES[state.monthIdx]) dibujarMovsResumen();
+    }).catch(function(err){
+      movsResumen.cargando = "";
+      caja.innerHTML = '<div class="empty-note">Error: '+esc(err.message)+'</div>';
+    });
+  }
+  if(mqEscritorio && mqEscritorio.addListener){
+    mqEscritorio.addListener(function(){ if(state.data) renderResumenMovs(); });
+  }
+  $("resVerHistorial").onclick = function(){ $("navHistorial").click(); };
+
   // Monto abreviado para las mini-tarjetas de 4 en fila ($1,85M / $383K):
   // el exacto se ve tocándola (toast) y siempre en escritorio.
   function montoCorto(n){
@@ -1473,9 +1726,9 @@
     return s + money.format(a);
   }
 
-  function statMini(label, valor, cls, prefijo){
+  function statMini(label, valor, cls, prefijo, extraCls){
     var full = (prefijo || "") + money.format(valor);
-    return '<button type="button" class="stat-mini" data-label="'+esc(label)+'" data-full="'+esc(full)+'">' +
+    return '<button type="button" class="stat-mini'+(extraCls ? " "+extraCls : "")+'" data-label="'+esc(label)+'" data-full="'+esc(full)+'">' +
       '<div class="l">'+esc(label)+'</div>' +
       '<div class="v'+(cls ? " "+cls : "")+'"><span class="short">'+(prefijo || "")+montoCorto(valor)+'</span>' +
       '<span class="full">'+full+'</span></div></button>';
