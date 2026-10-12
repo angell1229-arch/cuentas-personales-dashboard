@@ -1396,7 +1396,7 @@
   // Versión de la app: subirla en CADA cambio de la app (frontend o backend)
   // y anotarla en el "Registro de cambios" de FUNCIONES_APP.md (columna Versión).
   // Se muestra al pie de cada pestaña y en la pantalla de configuración.
-  var APP_VERSION = "2.6";
+  var APP_VERSION = "2.7";
   var APP_VERSION_FECHA = "2026-10-12";
 
   var MESES = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
@@ -4625,9 +4625,41 @@
   }
 
   // ---------- Proyecciones (siempre del año en curso) ----------
-  // Método simple y explicado en el mismo informe: meses cerrados = lo real;
-  // mes actual y futuros = lo mayor entre lo ya anotado y el promedio de los
-  // meses cerrados (gasto, sueldo y ahorro). Las ganancias no se proyectan.
+  // Método explicado en el mismo informe. Meses cerrados = lo real.
+  // Gasto del mes en curso y futuros (con estacionalidad, aprobado por Angel
+  // 2026-10-12): nivel del año × peso del mes, o lo ya anotado si es mayor.
+  //   - peso del mes: en cada año anterior, gasto del mes ÷ promedio mensual
+  //     de ese año; se toma la mediana entre años (una compra puntual no
+  //     infla el mes) y se normaliza para que los 12 pesos promedien 1.
+  //     Con menos de 2 años de historia para un mes, peso 1.
+  //   - nivel del año: promedio de los meses cerrados divididos por su peso
+  //     (un mes caro por temporada no infla el nivel).
+  // Sueldo y ahorro: lo mayor entre lo anotado y el promedio de los meses
+  // cerrados. Las ganancias no se proyectan.
+  function mediana(v){
+    var o = v.slice().sort(function(a, b){ return a - b; }), n = o.length;
+    return n % 2 ? o[(n - 1) / 2] : (o[n / 2 - 1] + o[n / 2]) / 2;
+  }
+  function pesosEstacionales(hist, anio){
+    var porMes = [[],[],[],[],[],[],[],[],[],[],[],[]], anios = [];
+    (hist || []).forEach(function(a){
+      if(a.anio >= anio) return;
+      var g = (a.gastoMeses || []).map(function(v){ return Number(v) || 0; });
+      var pos = g.filter(function(v){ return v > 0; });
+      if(pos.length < 6) return;   // año con muy pocos meses: no sirve para comparar
+      var prom = pos.reduce(function(x, y){ return x + y; }, 0) / pos.length;
+      anios.push(a.anio);
+      g.forEach(function(v, i){ if(v > 0) porMes[i].push(v / prom); });
+    });
+    var pesos = porMes.map(function(l){ return l.length >= 2 ? mediana(l) : 1; });
+    var media = pesos.reduce(function(x, y){ return x + y; }, 0) / 12;
+    return {
+      pesos: pesos.map(function(p){ return p / media; }),
+      conHistoria: porMes.map(function(l){ return l.length >= 2; }),
+      anios: anios
+    };
+  }
+
   function informeProyecciones(){
     var hoy = new Date(), anio = hoy.getFullYear(), mi = hoy.getMonth();
     return Promise.all([
@@ -4643,7 +4675,13 @@
       var presGastoAnual = sumaCampo(cfa.visibles, "presupuestoAnual", "presupuestoMensual", true);
       var presGastoMes = sumaCampo(cfa.visibles, "presupuestoAnual", "presupuestoMensual", false);
       var hayCerrados = mi > 0;
-      var promG = hayCerrados ? promedioPositivos(ha.gastoMeses, 0, mi - 1) : presGastoMes;
+      var est = pesosEstacionales(hist, anio);
+      var nivelBase = [];
+      for(var k = 0; k < mi; k++){
+        var gk = Number(ha.gastoMeses[k]) || 0;
+        if(gk > 0) nivelBase.push(gk / est.pesos[k]);
+      }
+      var promG = nivelBase.length ? nivelBase.reduce(function(x, y){ return x + y; }, 0) / nivelBase.length : presGastoMes;
       var promS = hayCerrados ? promedioPositivos(ha.sueldoMeses, 0, mi - 1) : (Number(d.sueldo) || 0);
       var promA = hayCerrados ? promedioPositivos(ha.ahorroMeses, 0, mi - 1) : (Number(d.ahorroPresupuesto) || 0);
 
@@ -4651,11 +4689,16 @@
       for(var i = 0; i < 12; i++){
         var g = Number(ha.gastoMeses[i]) || 0, su = Number(ha.sueldoMeses[i]) || 0, ah = Number(ha.ahorroMeses[i]) || 0;
         var cerrado = i < mi;
-        var pg = cerrado ? g : Math.max(g, promG);
+        var esperado = promG * est.pesos[i];
+        var pg = cerrado ? g : Math.max(g, esperado);
         var ps = cerrado ? su : (su > 0 ? su : promS);
         var pa = cerrado ? ah : Math.max(ah, promA);
         proyG.push(pg); proyS.push(ps); proyA.push(pa);
-        filas.push([MESES_LABEL[i] + (i === mi ? " (en curso)" : ""), cerrado ? "real" : (g > 0 ? "anotado " + money.format(g) : "—"), money.format(pg), money.format(ps), money.format(pa)]);
+        var pesoTxt = "×" + est.pesos[i].toFixed(2).replace(".", ",") + (est.conHistoria[i] ? "" : " (sin historia)");
+        filas.push([MESES_LABEL[i] + (i === mi ? " (en curso)" : ""),
+          cerrado ? "real" : (g > esperado ? "anotado " + money.format(g) : "estimado"),
+          cerrado ? "" : pesoTxt,
+          money.format(pg), money.format(ps), money.format(pa)]);
         clases.push(cerrado ? "" : "fut");
       }
       var tG = sumaRango(proyG, 0, 11), tS = sumaRango(proyS, 0, 11), tA = sumaRango(proyA, 0, 11);
@@ -4675,9 +4718,12 @@
         svgBarras([{ valores: proyG, clase: function(i){ return i < mi ? "a" : "c"; } }],
           MESES_LABEL.map(function(mm){ return mm.slice(0, 3); }), presGastoMes) +
         leyenda([["var(--accent)", "Gasto real"], ["var(--accent)", "Gasto proyectado", "opacity:.35"], ["var(--red)", "Presupuesto mensual de gastos (este mes)", "height:2px;border-radius:0"]]) +
-        infTabla(["Mes","Base","Gasto","Sueldo","Ahorro"], filas, 2, ["Total " + anio, "", money.format(tG), money.format(tS), money.format(tA)], clases) +
-        '<div class="inf-nota">Cómo se calcula: los meses cerrados usan lo real. Para el mes en curso y los que vienen se usa lo mayor entre lo ya anotado y el promedio de los meses cerrados ' +
-        '(gasto ' + money.format(promG) + ', sueldo ' + money.format(promS) + ', ahorro ' + money.format(promA) + ' por mes). Las ganancias no se proyectan: se cuentan solo las ya registradas (' + money.format(tGan) + ').</div>');
+        infTabla(["Mes","Base","Peso del mes","Gasto","Sueldo","Ahorro"], filas, 2, ["Total " + anio, "", "", money.format(tG), money.format(tS), money.format(tA)], clases) +
+        '<div class="inf-nota">Cómo se calcula el gasto: los meses cerrados usan lo real. Para el mes en curso y los que vienen se toma el <b>nivel de ' + anio + '</b> ' +
+        '(' + money.format(promG) + ' por mes, ya descontada la temporada) multiplicado por el <b>peso del mes</b>, que dice cuánto más o menos gastas ese mes en un año normal ' +
+        (est.anios.length ? '(mediana de ' + est.anios.join(", ") + ')' : '(sin años anteriores: todos los pesos son 1)') +
+        '. Si ya anotaste más que eso (cuotas), se usa lo anotado. Sueldo y ahorro usan el promedio de los meses cerrados (' + money.format(promS) + ' y ' + money.format(promA) + '). ' +
+        'Las ganancias no se proyectan: se cuentan solo las ya registradas (' + money.format(tGan) + ').</div>');
 
       // Gastos ya anotados a futuro (cuotas y compras cargadas por adelantado)
       var fut = [];
