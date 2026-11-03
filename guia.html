@@ -27,7 +27,7 @@
       code,pre{background:#222a2d;} blockquote{background:#1d2427;} hr{border-color:#2b3336;}
     }
     </style></head><body><div class='barra'><a href='./'>← Volver a la app</a><span>Guía de la app</span></div><main><h1>Guía de la app — Cuentas Personales</h1>
-<blockquote><b>Versión de la app: 2.9</b> (2026-10-12). Esta guía explica en palabras simples qué muestra la app, qué significa cada cifra y cómo se calcula. Se actualiza con cada versión: lo nuevo está al final, en "Novedades por versión". Se abre desde el botón <b>?</b> de la app o en <code>GUIA_APP.pdf</code>. (El detalle técnico, para quien mantiene la app, está en <code>FUNCIONES_APP.md</code>.)</blockquote>
+<blockquote><b>Versión de la app: 2.10</b> (2026-11-03). Esta guía explica en palabras simples qué muestra la app, qué significa cada cifra y cómo se calcula. Se actualiza con cada versión: lo nuevo está al final, en "Novedades por versión". Se abre desde el botón <b>?</b> de la app o en <code>GUIA_APP.pdf</code>. (El detalle técnico, para quien mantiene la app, está en <code>FUNCIONES_APP.md</code>.)</blockquote>
 <hr>
 <h2>1. Cómo está organizada la app</h2>
 <table><thead><tr><th>Pestaña</th><th>Para qué sirve</th></tr></thead><tbody>
@@ -96,13 +96,24 @@
 <ul>
 <li>Se anotan por el <b>total del hogar</b>; en Resumen y Presupuesto ves <b>tu mitad</b>.
 </li>
-<li><b>Balance</b> = (lo que pagaste tú − lo que pagó Pablo) ÷ 2. Si es positivo, <b>Pablo te debe</b>; si es negativo, le debes tú.
+<li><b>Quién pagó qué</b>: tabla con cada categoría, su <b>total</b> y cuánto pagaste <b>tú</b> (Pagó Angel, en verde azulado) y cuánto pagó <b>Pablo</b> (en morado). Son montos completos: lo que salió del bolsillo de cada uno.
 </li>
-<li><b>DEUDA BCI</b> es tu gasto (100%), pero su cuota completa se <b>descuenta</b> del balance con Pablo.
+<li><b>La cuenta</b>, paso a paso:
+<ol>
+<li>A cada uno le toca <b>la mitad</b> del total.
 </li>
-<li><b>Enviar resumen a Pablo</b> arma una imagen con el detalle para mandársela.
+<li>Se resta <b>lo que Pablo ya pagó</b>.
+</li>
+<li>Lo que queda es <b>lo que le falta poner a Pablo</b> (si pagó más que su mitad, dice "Pablo pagó de más").
+</li>
+<li>Si hay <b>DEUDA BCI</b>, su cuota completa se <b>descuenta</b> (es tu gasto al 100%, pero se lo debes a Pablo).
+</li>
+<li>El recuadro final dice quién le transfiere a quién y cuánto: <b>verde</b> = Pablo te transfiere, <b>rojo</b> = le transfieres tú.
+</li></ol>
+</li>
+<li><b>Enviar resumen a Pablo</b> arma una imagen con <b>la misma tabla y la misma cuenta</b>, para que él vea exactamente lo que tú ves.
 </li></ul>
-<blockquote><b>Ejemplo.</b> Gastos de la casa $120.000: pagaste $90.000 y Pablo $30.000. Balance = ($90.000 − $30.000) ÷ 2 = <b>Pablo te debe $30.000</b>. Tu mitad del gasto es $60.000.</blockquote>
+<blockquote><b>Ejemplo.</b> Gastos de la casa $120.000: pagaste $90.000 y Pablo $30.000. A cada uno le toca $60.000. Pablo ya pagó $30.000, así que <b>le falta poner $30.000</b>. Si además hay una cuota BCI de $10.000, se descuenta: <b>Pablo te transfiere $20.000</b>.</blockquote>
 <p><b>Deudas personales</b> (Pablo, Mamá, Papá, Lagi y las que agregues): es una libreta aparte. El saldo de cada persona es la suma de sus movimientos:</p>
 <table><thead><tr><th>Movimiento</th><th>Efecto</th></tr></thead><tbody>
 <tr><td><b>Le presté</b></td><td>La persona te debe más.</td></tr>
@@ -236,7 +247,8 @@
 <hr>
 <h2>15. Novedades por versión</h2>
 <table><thead><tr><th>Versión</th><th>Fecha</th><th>Qué cambió</th></tr></thead><tbody>
-<tr><td><b>2.9</b></td><td>2026-10-12</td><td>Guía de la app (esta), en PDF y dentro de la app con el botón <b>?</b>. El informe en PDF suma los colores de la app: íconos de categoría, porcentajes en pastillas verde/ámbar/rojo y barras.</td></tr>
+<tr><td><b>2.10</b></td><td>2026-11-03</td><td>Compartidos más claro: tabla "quién pagó qué" (cuánto pagó cada uno en cada categoría) y la cuenta paso a paso hasta lo que hay que transferir. La imagen para Pablo y el informe muestran lo mismo.</td></tr>
+<tr><td>2.9</td><td>2026-10-12</td><td>Guía de la app (esta), en PDF y dentro de la app con el botón <b>?</b>. El informe en PDF suma los colores de la app: íconos de categoría, porcentajes en pastillas verde/ámbar/rojo y barras.</td></tr>
 <tr><td>2.8</td><td>2026-10-12</td><td>Informe en PDF con diseño "Ejecutivo": portada, cifras en franja, secciones numeradas y recuadro "Lo principal".</td></tr>
 <tr><td>2.7</td><td>2026-10-12</td><td>La proyección del año considera los meses que históricamente son más caros (temporadas).</td></tr>
 <tr><td>2.6</td><td>2026-10-12</td><td>Informe en PDF: Completo, Mes, Año y Proyecciones.</td></tr>
