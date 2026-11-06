@@ -40,6 +40,7 @@
     --pablo:#6d4fc4;
     --amber:#b45309;
     --amber-soft:#fef3e2;
+    --ia-sueldo:#0d6e7d; --ia-gan:#5fc4b0; --ia-ahorro:#d9971f; --ia-sel:#e7f3f4;
     --border:#e6edef;
     --shadow:0 2px 14px rgba(13,45,50,0.06);
     --radius:22px;
@@ -64,6 +65,7 @@
       --pablo:#b3a2ff;
       --amber:#ffc069;
       --amber-soft:#332618;
+      --ia-sueldo:#2bb8c9; --ia-gan:#1d7f70; --ia-ahorro:#ffc069; --ia-sel:#123034;
       --border:#1f2e32;
       --shadow:0 2px 16px rgba(0,0,0,0.35);
     }
@@ -478,6 +480,24 @@
   }
   .kpi-note b{color:var(--accent);}
 
+  /* ---------- Metas: "Ingresos y ahorro" (opción A elegida en fotos, 2026-11-05) ---------- */
+  .ia-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+  .ia-kpi{background:var(--surface-2);border-radius:14px;padding:9px 10px;min-width:0;}
+  .ia-kpi .l{font-size:10.5px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.3px;}
+  .ia-kpi .v{font-size:16px;font-weight:800;margin-top:2px;letter-spacing:-.3px;font-variant-numeric:tabular-nums;}
+  .ia-kpi .v.pos{color:var(--green);}
+  .ia-kpi .s{font-size:10.5px;color:var(--text-dim);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ia-graf{display:block;width:100%;height:auto;}
+  .ia-graf .hit{cursor:pointer;}
+  .ia-ley{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:11.5px;color:var(--text-dim);margin-top:4px;}
+  .ia-ley i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px;}
+  .ia-det{border:1.5px solid var(--accent);border-radius:16px;padding:11px 14px;margin-top:12px;background:var(--ia-sel);}
+  .ia-det h4{margin:0 0 4px;font-size:13.5px;display:flex;justify-content:space-between;gap:8px;}
+  .ia-det h4 span:last-child{font-weight:600;color:var(--text-dim);font-size:12px;}
+  .ia-det .fila{display:flex;justify-content:space-between;font-size:13.5px;padding:3px 0;}
+  .ia-det .fila b{font-variant-numeric:tabular-nums;}
+  .ia-det .fila b.pos{color:var(--green);} .ia-det .fila b.neg{color:var(--red);}
+  .ia-toca{font-size:11.5px;color:var(--text-dim);text-align:center;margin-top:7px;}
   .mini-months{display:flex;align-items:flex-end;gap:3px;height:54px;padding:10px 0 4px;}
   .mini-months .mm{flex:1;background:var(--surface-2);border-radius:3px 3px 0 0;min-height:2px;position:relative;}
   .mini-months .mm.has{background:var(--mint);}
@@ -546,6 +566,7 @@
     --pablo:#6d4fc4;
     --amber:#b45309;
     --amber-soft:#fef3e2;
+    --ia-sueldo:#0d6e7d; --ia-gan:#5fc4b0; --ia-ahorro:#d9971f; --ia-sel:#e7f3f4;
     --border:#e6edef;
     --shadow:0 2px 14px rgba(13,45,50,0.06);
     --radius:22px;
@@ -1057,11 +1078,9 @@
       <div class="stat-scroll" id="ahorroStats"></div>
       <div class="kpi-note" id="ahorroNote"></div>
 
-      <div class="section-title">Ingresos mes a mes <span class="tag" id="ingresosAnioTag"></span></div>
-      <div class="card" style="padding:10px 16px;" id="ingresosMeses"></div>
+      <div class="section-title">Ingresos y ahorro <span class="tag" id="ingresosAnioTag"></span></div>
+      <div class="card" id="ingresosAhorro"></div>
 
-      <div class="section-title">Ahorro mes a mes <span class="tag" id="ahorroAnioTag"></span></div>
-      <div class="card" style="padding:10px 16px;" id="ahorroMeses"></div>
 
       <div class="section-title">Ahorro por año <span class="tag" id="ahorroAcumuladoTag"></span></div>
       <div class="card" style="padding:4px 16px;" id="ahorroPorAnio"></div>
@@ -1475,8 +1494,8 @@
   // Versión de la app: subirla en CADA cambio de la app (frontend o backend)
   // y anotarla en el "Registro de cambios" de FUNCIONES_APP.md (columna Versión).
   // Se muestra al pie de cada pestaña y en la pantalla de configuración.
-  var APP_VERSION = "2.10";
-  var APP_VERSION_FECHA = "2026-11-03";
+  var APP_VERSION = "2.11";
+  var APP_VERSION_FECHA = "2026-11-05";
 
   var MESES = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
   var MESES_LABEL = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -2670,8 +2689,7 @@
     }
     $("ahorroNote").innerHTML = nota;
 
-    renderIngresosMeses();
-    renderAhorroMeses();
+    renderIngresosAhorro();
     renderHistoricoAnios();
     renderLiquidaciones();
   }
@@ -2969,56 +2987,102 @@
       '<div class="cat-sub">Promedio '+money.format(prom)+'/mes · acumulado '+money.format(acum)+comparacion+'</div>';
   }
 
-  // Mini gráfico de barras de los 12 meses del año seleccionado (sueldo + ganancias).
-  function renderIngresosMeses(){
+  // "Ingresos y ahorro" del año (opción A que Angel eligió en fotos, 2026-11-05): totales
+  // arriba, un solo gráfico (barras de sueldo + ganancias y una línea de ahorro) y el detalle
+  // del mes tocado. Reemplaza los dos mini gráficos "Ingresos mes a mes" y "Ahorro mes a mes",
+  // que no mostraban montos (solo un title que en el celular no se ve).
+  var iaMesSel = null, iaAnio = null; // mes tocado (0-11); null = el último mes con datos
+  function renderIngresosAhorro(){
     var hist = state.historico || [];
-    var anioActual = hist.find(function(a){ return a.anio === state.year; });
+    var ha = hist.find(function(a){ return a.anio === state.year; });
     $("ingresosAnioTag").textContent = String(state.year);
-
-    if(!anioActual || !anioActual.sueldoMeses){
-      $("ingresosMeses").innerHTML = '<div class="empty-note">Sin datos de ingresos para '+state.year+'.</div>';
+    if(!ha || !ha.sueldoMeses){
+      $("ingresosAhorro").innerHTML = '<div class="empty-note">Sin datos de ingresos ni ahorro para '+state.year+'.</div>';
       return;
     }
-    var sueldo = anioActual.sueldoMeses;
-    var ganancias = anioActual.gananciasMeses || sueldo.map(function(){ return 0; });
-    var meses = sueldo.map(function(v, i){ return (Number(v)||0) + (Number(ganancias[i])||0); });
-    var max = Math.max.apply(null, meses.concat([1]));
+    function arr(x){ return (x || []).map(function(v){ return Number(v) || 0; }); }
+    var su = arr(ha.sueldoMeses), ga = arr(ha.gananciasMeses), ah = arr(ha.ahorroMeses), gs = arr(ha.gastoMeses);
+    while(ga.length < 12) ga.push(0); while(ah.length < 12) ah.push(0); while(gs.length < 12) gs.push(0);
+    var ing = su.map(function(v, i){ return v + ga[i]; });
+    var hoy = new Date();
+    var corte = state.year === hoy.getFullYear() ? hoy.getMonth() : (state.year > hoy.getFullYear() ? -1 : 11);
+    // Último mes con algún dato (hasta el corte), para elegir el mes que se muestra al abrir.
+    var ultimo = -1;
+    for(var i = 0; i <= corte; i++) if(ing[i] || ah[i] || gs[i]) ultimo = i;
+    if(iaAnio !== state.year){ iaAnio = state.year; iaMesSel = null; }
+    if(iaMesSel === null || iaMesSel > 11) iaMesSel = ultimo >= 0 ? ultimo : 0;
+    var sel = iaMesSel;
 
-    $("ingresosMeses").innerHTML =
-      '<div class="mini-months">' + meses.map(function(v, i){
-        var h = Math.max(2, (v / max) * 100);
-        var detalle = money.format(sueldo[i]||0) + ' sueldo';
-        if(ganancias[i] > 0) detalle += ' + ' + money.format(ganancias[i]) + ' ganancias';
-        return '<div class="mm'+(v>0?' has':'')+'" style="height:'+h+'%" title="'+MESES_LABEL[i]+': '+detalle+'"></div>';
-      }).join("") + '</div>' +
-      '<div class="mini-labels">' + MESES_LABEL.map(function(m){
-        return '<span>'+m.slice(0,1)+'</span>';
-      }).join("") + '</div>' +
-      '<div class="cat-sub">Mejor mes: '+money.format(max)+' · Total '+state.year+': '+money.format(meses.reduce(function(a,b){return a+b;},0))+'</div>';
-  }
+    var tI = 0, tA = 0, nI = 0;
+    for(var j = 0; j <= corte; j++){ tI += ing[j]; tA += ah[j]; if(ing[j] > 0) nI++; }
+    var tasa = tI > 0 ? tA / tI * 100 : 0;
+    var meses = Math.max(1, nI);
+    var kpis = '<div class="ia-kpis">' +
+      '<div class="ia-kpi"><div class="l">Ingresos</div><div class="v">'+montoCorto(tI)+'</div><div class="s">'+montoCorto(tI / meses)+' al mes</div></div>' +
+      '<div class="ia-kpi"><div class="l">Ahorro</div><div class="v pos">'+montoCorto(tA)+'</div><div class="s">'+montoCorto(tA / meses)+' al mes</div></div>' +
+      '<div class="ia-kpi"><div class="l">Tasa</div><div class="v">'+tasa.toFixed(1).replace(".", ",")+'%</div><div class="s">referencia 20%</div></div></div>';
 
-  // Mini gráfico de barras de los 12 meses del año seleccionado.
-  function renderAhorroMeses(){
-    var hist = state.historico || [];
-    var anioActual = hist.find(function(a){ return a.anio === state.year; });
-    $("ahorroAnioTag").textContent = String(state.year);
-
-    if(!anioActual || !anioActual.ahorroMeses){
-      $("ahorroMeses").innerHTML = '<div class="empty-note">Sin datos de ahorro para '+state.year+'.</div>';
-      return;
+    // Gráfico SVG: en el celular escala a lo ancho de la tarjeta; en pantallas anchas usa el
+    // ancho real (alto fijo), para que no se estire.
+    var ancho = ($("ingresosAhorro").clientWidth || 0) - 32;
+    var W = ancho > 380 ? Math.round(ancho) : 330, H = 186, base = 158, arriba = 12, g = W / 12, bw = Math.min(g * 0.62, 38);
+    var mx = Math.max.apply(null, ing.concat(ah).concat([1])) * 1.06;
+    var paso = mx > 4e6 ? 2e6 : (mx > 1.6e6 ? 1e6 : (mx > 6e5 ? 5e5 : 1e5));
+    function y(v){ return base - (v / mx) * (base - arriba); }
+    var svg = '<svg class="ia-graf" viewBox="0 0 '+W+' '+H+'"'+(W > 330 ? ' style="max-width:'+W+'px"' : '')+' role="img" aria-label="Ingresos y ahorro de '+state.year+' mes a mes">';
+    for(var r = paso; r < mx; r += paso){
+      svg += '<line x1="0" x2="'+W+'" y1="'+y(r).toFixed(1)+'" y2="'+y(r).toFixed(1)+'" stroke="var(--border)"/>' +
+        '<text x="'+(W-1)+'" y="'+(y(r)-3).toFixed(1)+'" font-size="9.5" fill="var(--text-dim)" text-anchor="end">'+montoCorto(r).replace("$", "")+'</text>';
     }
-    var meses = anioActual.ahorroMeses;
-    var max = Math.max.apply(null, meses.concat([1]));
+    for(var k = 0; k < 12; k++){
+      var x = k * g + (g - bw) / 2;
+      if(k === sel) svg += '<rect x="'+(k*g+1).toFixed(1)+'" y="3" width="'+(g-2).toFixed(1)+'" height="'+(base-1)+'" rx="7" fill="var(--ia-sel)"/>';
+      if(k <= corte && ing[k] > 0){
+        svg += '<rect x="'+x.toFixed(1)+'" y="'+y(su[k]).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+(base-y(su[k])).toFixed(1)+'" rx="3" fill="var(--ia-sueldo)"/>';
+        if(ga[k] > 0) svg += '<rect x="'+x.toFixed(1)+'" y="'+y(ing[k]).toFixed(1)+'" width="'+bw.toFixed(1)+'" height="'+Math.max(2, y(su[k])-y(ing[k])).toFixed(1)+'" rx="2" fill="var(--ia-gan)"/>';
+      } else {
+        svg += '<rect x="'+x.toFixed(1)+'" y="'+(base-3)+'" width="'+bw.toFixed(1)+'" height="3" rx="1.5" fill="var(--surface-2)"/>';
+      }
+      svg += '<text x="'+(k*g+g/2).toFixed(1)+'" y="'+(H-12)+'" font-size="10" font-weight="'+(k===sel?800:600)+'" fill="'+(k===sel?'var(--accent)':'var(--text-dim)')+'" text-anchor="middle">'+MESES_LABEL[k].slice(0,3)+'</text>';
+    }
+    // La línea de ahorro llega hasta el último mes con datos (el mes en curso sin datos no baja a cero).
+    if(ultimo >= 0){
+      var pts = [];
+      for(var q = 0; q <= ultimo; q++) pts.push((q*g+g/2).toFixed(1)+","+y(ah[q]).toFixed(1));
+      if(pts.length > 1){
+        svg += '<polyline points="'+pts.join(" ")+'" fill="none" stroke="var(--surface)" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>';
+        svg += '<polyline points="'+pts.join(" ")+'" fill="none" stroke="var(--ia-ahorro)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>';
+      }
+      for(var c = 0; c <= ultimo; c++){
+        svg += '<circle cx="'+(c*g+g/2).toFixed(1)+'" cy="'+y(ah[c]).toFixed(1)+'" r="'+(c===sel?5:3.2)+'" fill="var(--surface)" stroke="var(--ia-ahorro)" stroke-width="2.5"/>';
+      }
+    }
+    // Zonas para tocar cada mes (encima de todo).
+    for(var t = 0; t < 12; t++){
+      svg += '<rect class="hit" data-mes="'+t+'" x="'+(t*g).toFixed(1)+'" y="0" width="'+g.toFixed(1)+'" height="'+H+'" fill="transparent"><title>'+MESES_LABEL[t]+'</title></rect>';
+    }
+    svg += '</svg>';
 
-    $("ahorroMeses").innerHTML =
-      '<div class="mini-months">' + meses.map(function(v){
-        var h = Math.max(2, (v / max) * 100);
-        return '<div class="mm'+(v>0?' has':'')+'" style="height:'+h+'%" title="'+money.format(v)+'"></div>';
-      }).join("") + '</div>' +
-      '<div class="mini-labels">' + MESES_LABEL.map(function(m){
-        return '<span>'+m.slice(0,1)+'</span>';
-      }).join("") + '</div>' +
-      '<div class="cat-sub">Mejor mes: '+money.format(max)+' · Total '+state.year+': '+money.format(meses.reduce(function(a,b){return a+b;},0))+'</div>';
+    var ley = '<div class="ia-ley"><span><i style="background:var(--ia-sueldo)"></i>Sueldo</span><span><i style="background:var(--ia-gan)"></i>Ganancias</span>' +
+      '<span><i style="background:var(--ia-ahorro);height:3px;border-radius:2px;vertical-align:3px"></i>Ahorro</span></div>';
+
+    var det;
+    if(sel > corte || !(ing[sel] || ah[sel] || gs[sel])){
+      det = '<div class="ia-det"><h4><span>'+MESES_LABEL[sel]+' '+state.year+'</span><span>sin datos</span></h4>' +
+        '<div class="fila"><span>'+(sel > corte ? 'Todavía no llega este mes.' : 'No hay ingresos ni ahorro registrados.')+'</span></div></div>';
+    } else {
+      var tasaMes = ing[sel] > 0 ? Math.round(ah[sel] / ing[sel] * 100) + "%" : "—";
+      det = '<div class="ia-det"><h4><span>'+MESES_LABEL[sel]+' '+state.year+'</span><span>mes seleccionado</span></h4>' +
+        '<div class="fila"><span>Sueldo</span><b>'+money.format(su[sel])+'</b></div>' +
+        '<div class="fila"><span>Ganancias</span><b>'+money.format(ga[sel])+'</b></div>' +
+        '<div class="fila"><span>Gasto</span><b>'+money.format(gs[sel])+'</b></div>' +
+        '<div class="fila"><span>Ahorro</span><b class="pos">'+money.format(ah[sel])+' · '+tasaMes+'</b></div></div>';
+    }
+
+    $("ingresosAhorro").innerHTML = kpis + svg + ley + det + '<div class="ia-toca">Toca un mes para ver su detalle</div>';
+    $("ingresosAhorro").querySelectorAll(".ia-graf .hit").forEach(function(el){
+      el.addEventListener("click", function(){ iaMesSel = Number(el.getAttribute("data-mes")); renderIngresosAhorro(); });
+    });
   }
 
   function renderHistoricoAnios(){
