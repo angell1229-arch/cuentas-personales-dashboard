@@ -27,7 +27,7 @@
       code,pre{background:#222a2d;} blockquote{background:#1d2427;} hr{border-color:#2b3336;}
     }
     </style></head><body><div class='barra'><a href='./'>← Volver a la app</a><span>Guía de la app</span></div><main><h1>Guía de la app — Cuentas Personales</h1>
-<blockquote><b>Versión de la app: 2.11</b> (2026-11-05). Esta guía explica en palabras simples qué muestra la app, qué significa cada cifra y cómo se calcula. Se actualiza con cada versión: lo nuevo está al final, en "Novedades por versión". Se abre desde el botón <b>?</b> de la app o en <code>GUIA_APP.pdf</code>. (El detalle técnico, para quien mantiene la app, está en <code>FUNCIONES_APP.md</code>.)</blockquote>
+<blockquote><b>Versión de la app: 2.12</b> (2026-11-14). Esta guía explica en palabras simples qué muestra la app, qué significa cada cifra y cómo se calcula. Se actualiza con cada versión: lo nuevo está al final, en "Novedades por versión". Se abre desde el botón <b>?</b> de la app o en <code>GUIA_APP.pdf</code>. (El detalle técnico, para quien mantiene la app, está en <code>FUNCIONES_APP.md</code>.)</blockquote>
 <hr>
 <h2>1. Cómo está organizada la app</h2>
 <table><thead><tr><th>Pestaña</th><th>Para qué sirve</th></tr></thead><tbody>
@@ -220,13 +220,15 @@
 <hr>
 <h2>12. Registrar movimientos (+ Nuevo)</h2>
 <table><thead><tr><th>Tipo</th><th>Dónde queda</th><th>Detalle</th></tr></thead><tbody>
-<tr><td><b>Gasto</b></td><td>Historial (Movimientos)</td><td>Categoría (las 4 más usadas a un toque), quién pagó (Yo, Pablo, Mamá, Papá, Lagi), banco, fecha, número de cuota y detalle.</td></tr>
+<tr><td><b>Gasto</b></td><td>Historial (Movimientos)</td><td>Categoría (las 4 más usadas a un toque), quién pagó (Yo, Pablo, Mamá, Papá, Lagi), banco, fecha, cuotas y detalle.</td></tr>
 <tr><td><b>Ganancia</b></td><td>Historial, categoría GANANCIAS</td><td>De quién es y detalle.</td></tr>
 <tr><td><b>Sueldo</b></td><td>Hoja Manual</td><td>Solo cuenta si ese mes <b>no</b> tiene liquidación. Mejor cargar la liquidación completa.</td></tr>
 <tr><td><b>Ahorro</b></td><td>Hoja Manual</td><td>Suma al ahorro del mes y al "Gastado".</td></tr>
 </tbody></table>
 <ul>
 <li>En el celular el monto se escribe con el teclado de la app (con 000 para los miles).
+</li>
+<li><b>Compras en cuotas</b>: escribe el <b>total de la compra</b> y en <b>Cuotas</b> el número total de cuotas (por ejemplo 3). La app muestra cómo queda ("3 cuotas de $30.000: nov, dic y ene") y anota <b>una cuota por mes desde el mes de la compra</b>, así que los meses siguientes ya aparecen con su cuota. Si después corriges una cuota en Historial, cambia solo esa.
 </li>
 <li>Un gasto se corrige o se borra tocándolo en <b>Historial</b>.
 </li></ul>
@@ -257,7 +259,8 @@
 <hr>
 <h2>15. Novedades por versión</h2>
 <table><thead><tr><th>Versión</th><th>Fecha</th><th>Qué cambió</th></tr></thead><tbody>
-<tr><td><b>2.11</b></td><td>2026-11-05</td><td>Metas: "Ingresos y ahorro" en un solo gráfico más grande, con las cifras del año y el detalle del mes que tocas.</td></tr>
+<tr><td><b>2.12</b></td><td>2026-11-14</td><td>Compras en cuotas: escribes el total y el número de cuotas, y la app anota una cuota por mes desde el mes de la compra.</td></tr>
+<tr><td>2.11</td><td>2026-11-05</td><td>Metas: "Ingresos y ahorro" en un solo gráfico más grande, con las cifras del año y el detalle del mes que tocas.</td></tr>
 <tr><td>2.10</td><td>2026-11-03</td><td>Compartidos más claro: tabla "quién pagó qué" (cuánto pagó cada uno en cada categoría) y la cuenta paso a paso hasta lo que hay que transferir. La imagen para Pablo y el informe muestran lo mismo.</td></tr>
 <tr><td>2.9</td><td>2026-10-12</td><td>Guía de la app (esta), en PDF y dentro de la app con el botón <b>?</b>. El informe en PDF suma los colores de la app: íconos de categoría, porcentajes en pastillas verde/ámbar/rojo y barras.</td></tr>
 <tr><td>2.8</td><td>2026-10-12</td><td>Informe en PDF con diseño "Ejecutivo": portada, cifras en franja, secciones numeradas y recuadro "Lo principal".</td></tr>
