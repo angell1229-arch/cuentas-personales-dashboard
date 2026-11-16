@@ -1499,8 +1499,8 @@
   // Versión de la app: subirla en CADA cambio de la app (frontend o backend)
   // y anotarla en el "Registro de cambios" de FUNCIONES_APP.md (columna Versión).
   // Se muestra al pie de cada pestaña y en la pantalla de configuración.
-  var APP_VERSION = "2.13";
-  var APP_VERSION_FECHA = "2026-11-14";
+  var APP_VERSION = "2.14";
+  var APP_VERSION_FECHA = "2026-11-15";
 
   var MESES = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
   var MESES_LABEL = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -2760,7 +2760,7 @@
     $("saldosList").innerHTML = s.cuentas.map(function(c){
       var esDeuda = c.categoria === "Deuda";
       var compartida = c.pctPropio < 100;
-      // Las cuentas sin `fila` vienen del ledger de Pablo/Mamá/Papá/Lagi (ver
+      // Las cuentas sin `fila` son automáticas (`origen`): ledger de Deudas, portafolio de acciones o casa nueva (ver
       // obtenerSaldos en Code.gs): se muestran acá pero se editan desde la
       // pestaña Compartidos → Deudas personales, no desde este formulario.
       var esDelLedger = c.fila === null;
@@ -2769,9 +2769,13 @@
         '<div class="cat-row-body">' +
         '<div class="cat-top"><span class="cat-name">'+esc(c.cuenta)+'</span>' +
         '<span class="cat-amount" style="color:'+(esDeuda?"var(--red)":"var(--text)")+'">'+(esDeuda?"−":"")+money.format(c.propio)+'</span></div>' +
-        '<div class="cat-top"><span class="cat-sub">'+esc(c.categoria)+(compartida?' · '+c.pctPropio+'% tuyo':'')+(esDelLedger?' · desde Deudas':'')+'</span>' +
+        '<div class="cat-top"><span class="cat-sub">'+esc(c.categoria)+(compartida?' · '+c.pctPropio+'% tuyo':'')+(esDelLedger?' · desde '+esc(c.origen || 'Deudas'):'')+'</span>' +
         (compartida ? '<span class="cat-of">de '+money.format(c.monto)+'</span>' : '') +
-        '</div></div></div></div>';
+        '</div>' +
+        // Acciones (desde el portafolio) y casa nueva (desde Movimientos), 2026-11-15: el
+        // backend arma un resumen (aportado, ganancia, dividendos / pie + cuotas).
+        (esDelLedger && c.origen && c.origen !== 'Deudas' && c.detalle ? '<div class="cat-sub" style="margin-top:3px;line-height:1.4">'+esc(c.detalle)+'</div>' : '') +
+        '</div></div></div>';
     }).join("");
 
     document.querySelectorAll("#saldosList .saldo-row").forEach(function(el){
