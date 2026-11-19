@@ -822,6 +822,19 @@
   .cuotas-hint{margin:2px auto 10px;max-width:340px;text-align:center;font-size:12.5px;line-height:1.45;color:var(--text);background:var(--accent-soft);border-radius:12px;padding:8px 12px;}
   .cuotas-hint b{font-variant-numeric:tabular-nums;}
   .cuotas-hint span{display:block;color:var(--text-dim);font-size:11.5px;}
+  /* Compras en cuotas como paquete (2026-11-18): al editar una cuota se elige qué cambiar. */
+  .pack-box{background:var(--accent-soft);border-radius:14px;padding:10px 12px;margin:0 0 12px;}
+  .pack-info{display:flex;gap:10px;align-items:center;}
+  .pack-ico{width:34px;height:34px;border-radius:10px;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:17px;flex:0 0 auto;}
+  .pack-info b{display:block;font-size:14px;}
+  .pack-info span{display:block;font-size:12px;color:var(--text-dim);line-height:1.35;margin-top:1px;}
+  .pack-lbl{font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.3px;margin:10px 0 5px;}
+  .pack-seg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;background:var(--surface);border-radius:12px;padding:3px;}
+  .pack-seg button{border:0;background:none;font:inherit;font-size:12px;font-weight:700;color:var(--text-dim);padding:6px 4px;border-radius:9px;line-height:1.2;cursor:pointer;min-height:44px;}
+  .pack-seg button.on{background:var(--accent);color:var(--accent-text, #fff);}
+  .amt-label{text-align:center;font-size:11px;font-weight:700;color:var(--text-dim);text-transform:uppercase;letter-spacing:.3px;}
+  .pack-meses{display:flex;gap:3px;justify-content:center;flex-wrap:wrap;margin-top:6px;}
+  .pack-meses i{font-style:normal;font-size:10.5px;font-weight:800;background:var(--accent);color:var(--accent-text, #fff);border-radius:6px;padding:3px 7px;}
   .amt-meta{
     display:block;margin:0 auto 4px;background:none;border:none;color:var(--text-dim);font-family:inherit;
     font-size:12.5px;font-weight:600;cursor:pointer;padding:6px 10px;border-radius:10px;
@@ -1149,14 +1162,27 @@
          en un toque y teclado numérico propio en el celular. Todos los campos de
          siempre siguen acá — solo cambió cómo se ven. `novalidate` porque la
          fecha puede quedar dentro del bloque plegado: la valida el JS del submit. -->
+    <div class="pack-box" id="packBox" hidden>
+      <div class="pack-info"><span class="pack-ico">📦</span><div><b id="packTitulo"></b><span id="packSub"></span></div></div>
+      <div class="pack-lbl">¿Qué quieres cambiar?</div>
+      <div class="pack-seg" id="packSeg">
+        <button type="button" data-a="esta">Solo esta cuota</button>
+        <button type="button" data-a="siguientes">Esta y las siguientes</button>
+        <button type="button" data-a="todas">Toda la compra</button>
+      </div>
+    </div>
+
     <form id="entryForm" novalidate>
+      <div class="amt-label" id="amtLabel" hidden></div>
       <input type="text" id="fValor" class="amt-input" inputmode="numeric" placeholder="$0" required autocomplete="off" aria-label="Valor en pesos">
       <button type="button" class="amt-meta" id="entryMetaToggle"><span id="entryMetaResumen">Hoy</span> · <b>editar</b></button>
       <div class="cuotas-hint" id="cuotasHint" hidden></div>
 
       <div class="meta-box" id="entryMetaBox" style="display:none;">
-        <label>Fecha</label>
-        <input type="date" id="fFecha" required>
+        <div id="fechaField">
+          <label>Fecha</label>
+          <input type="date" id="fFecha" required>
+        </div>
 
         <div class="row2" id="bancoCuotaField">
           <div>
@@ -1166,7 +1192,7 @@
             </select>
             <input type="text" id="fBancoOtro" placeholder="Nombre del banco" style="display:none;margin-top:8px;">
           </div>
-          <div>
+          <div id="cuotaField">
             <label id="fCuotaLabel">Cuotas</label>
             <input type="number" id="fCuota" value="1" min="1" max="48" inputmode="numeric">
           </div>
@@ -1196,6 +1222,7 @@
       </div>
 
       <button type="submit" class="submit-btn" id="submitBtn">Guardar</button>
+      <button type="button" class="delete-btn" id="deletePackBtn" style="display:none;">Eliminar la compra completa</button>
       <button type="button" class="delete-btn" id="deleteBtn" style="display:none;">Eliminar este gasto</button>
     </form>
   </div>
@@ -1499,8 +1526,8 @@
   // Versión de la app: subirla en CADA cambio de la app (frontend o backend)
   // y anotarla en el "Registro de cambios" de FUNCIONES_APP.md (columna Versión).
   // Se muestra al pie de cada pestaña y en la pantalla de configuración.
-  var APP_VERSION = "2.16";
-  var APP_VERSION_FECHA = "2026-11-15";
+  var APP_VERSION = "2.17";
+  var APP_VERSION_FECHA = "2026-11-18";
 
   var MESES = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO","JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
   var MESES_LABEL = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
@@ -3671,6 +3698,11 @@
       partes.push(getBancoValue() || "Sin banco");
       var cuota = Number($("fCuota").value) || 1;
       partes.push(cuota + (cuota === 1 ? " cuota" : " cuotas"));
+      if(packEdit){
+        if(packEdit.alcance === "siguientes") partes = [getBancoValue() || "Sin banco"];
+        else if(packEdit.alcance === "esta") partes[2] = "cuota " + packEdit.k + " de " + packEdit.n;
+        else partes[0] = "1ª cuota: " + partes[0].replace(/^(Hoy|Ayer), /, "");
+      }
     }
     $("entryMetaResumen").textContent = partes.join(" · ");
     actualizarCuotasHint();
@@ -3681,6 +3713,11 @@
   // número de esa cuota (una sola fila) y no se muestra el aviso.
   function actualizarCuotasHint(){
     var el = $("cuotasHint");
+    if(packEdit){
+      $("fCuotaLabel").textContent = packEdit.alcance === "todas" ? "Cuotas" : "N° de cuota";
+      pintarHintPack();
+      return;
+    }
     $("fCuotaLabel").textContent = editingFila ? "N° de cuota" : "Cuotas";
     var n = parseInt($("fCuota").value, 10) || 1;
     if(editingFila || currentType !== "GASTO" || n < 2){ el.hidden = true; return; }
@@ -3748,6 +3785,7 @@
 
   function openSheet(){
     editingFila = null;
+    cerrarPack();
     $("typeTabs").style.display = "flex";
     $("entryForm").reset();
     $("fBancoOtro").style.display = "none";
@@ -3769,6 +3807,7 @@
     var mov = (state.movimientos || []).find(function(m){ return m.fila === fila; });
     if(!mov) return;
     editingFila = fila;
+    cerrarPack();
     $("typeTabs").style.display = "none";
     setType("GASTO");
     $("sheetTitle").textContent = "Editar gasto";
@@ -3787,9 +3826,155 @@
     $("deleteBtn").style.display = "block";
     setEntryMetaAbierto(false);
     syncEntryChips();
+    prepararPack(mov);
     $("backdrop").classList.add("show");
     $("sheet").classList.add("show");
   }
+
+  // ====== Compras en cuotas como paquete (2026-11-18, "opción A" elegida por Angel) ======
+  // Al editar una cuota ("… cuota 2 de 6 (total $899.000)") arriba se elige qué cambiar:
+  // solo esa cuota (como siempre), esa y las siguientes (valor de cada cuota) o la compra
+  // completa (total, número de cuotas y mes de la primera). El backend reconoce las demás
+  // cuotas por ese mismo texto (editarCompraCuotas / eliminarCompraCuotas).
+  var packEdit = null;
+  function pad2(n){ return (n < 10 ? "0" : "") + n; }
+  function isoDeMes(abs, dia){
+    var y = Math.floor(abs / 12), m = abs % 12;
+    return y + "-" + pad2(m + 1) + "-" + pad2(Math.min(dia || 1, new Date(y, m + 1, 0).getDate()));
+  }
+  function mesCortoAbs(abs, conAnio){
+    var t = MESES_LABEL[abs % 12].slice(0, 3).toLowerCase();
+    return conAnio ? t + " " + Math.floor(abs / 12) : t;
+  }
+  function datosPack(mov){
+    var det = String(mov.detalle || "");
+    var m = det.match(/cuota (\d+) de (\d+) \(total \$([\d.]+)\)/);
+    if(!m) return null;
+    var k = Number(m[1]), n = Number(m[2]);
+    var mi = MESES.indexOf(String(mov.mes).toUpperCase());
+    if(n < 2 || k < 1 || k > n || mi < 0) return null;
+    var i = det.search(/(^| — )cuota \d+ de \d+ \(total \$/);
+    var compartido = det.indexOf("compartido con Daniela") !== -1;
+    var mc = det.match(/cuota completa \$([\d.]+)/);
+    var mesAbs = Number(mov.anio) * 12 + mi;
+    var valorFila = Math.round(Number(mov.valor) || 0);
+    return { k: k, n: n, total: parseMiles(m[3]), base: i <= 0 ? "" : det.slice(0, i),
+      mesAbs: mesAbs, primerMes: mesAbs - (k - 1), dia: Number(mov.dia) || 1, compartido: compartido,
+      cuotaCompleta: mc ? parseMiles(mc[1]) : (compartido ? valorFila * 2 : valorFila), mov: mov, alcance: "todas" };
+  }
+  function cerrarPack(){
+    packEdit = null;
+    $("packBox").hidden = true;
+    $("amtLabel").hidden = true;
+    $("deletePackBtn").style.display = "none";
+    $("deleteBtn").textContent = "Eliminar este gasto";
+    $("fechaField").style.display = "";
+    $("cuotaField").style.display = "";
+  }
+  function prepararPack(mov){
+    var pk = datosPack(mov);
+    if(!pk) return;
+    packEdit = pk;
+    var cat = String(mov.categoria || "").toLowerCase();
+    $("sheetTitle").textContent = "Editar compra en cuotas";
+    $("packTitulo").textContent = (pk.base || cat.charAt(0).toUpperCase() + cat.slice(1)) + " · " + pk.n + " cuotas";
+    $("packSub").textContent = "Estás en la cuota " + pk.k + " (" + MESES_LABEL[pk.mesAbs % 12].toLowerCase() + ") · " +
+      mesCortoAbs(pk.primerMes, true) + " → " + mesCortoAbs(pk.primerMes + pk.n - 1, true) + (pk.compartido ? " · compartida con Daniela" : "");
+    $("packBox").hidden = false;
+    $("deletePackBtn").textContent = "Eliminar la compra completa (" + pk.n + " cuotas)";
+    $("deletePackBtn").style.display = "block";
+    $("deleteBtn").textContent = "Eliminar solo esta cuota";
+    setPackAlcance("todas");
+  }
+  function setPackAlcance(a){
+    if(!packEdit) return;
+    var pk = packEdit, mov = pk.mov;
+    pk.alcance = a;
+    document.querySelectorAll("#packSeg button").forEach(function(b){ b.classList.toggle("on", b.dataset.a === a); });
+    $("fechaField").style.display = a === "siguientes" ? "none" : "";
+    $("cuotaField").style.display = a === "siguientes" ? "none" : "";
+    if(a === "esta"){
+      $("fValor").value = valorEntrada(Math.round(Number(mov.valor) || 0));
+      $("fCuota").value = pk.k;
+      $("fDetalle").value = mov.detalle || "";
+      $("fFecha").value = isoDeMes(pk.mesAbs, pk.dia);
+      $("amtLabel").textContent = pk.compartido ? "Tu mitad de esta cuota" : "Valor de esta cuota";
+    } else if(a === "siguientes"){
+      $("fValor").value = valorEntrada(pk.cuotaCompleta);
+      $("fDetalle").value = pk.base;
+      $("fFecha").value = isoDeMes(pk.mesAbs, pk.dia);
+      $("amtLabel").textContent = pk.k === pk.n ? "Valor de la última cuota" : "Valor de cada cuota (de la " + pk.k + " a la " + pk.n + ")";
+    } else {
+      $("fValor").value = valorEntrada(pk.total);
+      $("fCuota").value = pk.n;
+      $("fDetalle").value = pk.base;
+      $("fFecha").value = isoDeMes(pk.primerMes, pk.dia);
+      $("amtLabel").textContent = "Total de la compra";
+    }
+    $("amtLabel").hidden = false;
+    actualizarResumenEntrada();
+  }
+  document.querySelectorAll("#packSeg button").forEach(function(b){
+    b.onclick = function(){ setPackAlcance(b.dataset.a); };
+  });
+  function pintarHintPack(){
+    var el = $("cuotasHint"), pk = packEdit, a = pk.alcance, btn = $("submitBtn");
+    var v = parseMiles($("fValor").value) || 0;
+    if(a === "esta"){ el.hidden = true; btn.textContent = "Guardar solo esta cuota"; return; }
+    var desde, cant, txt, nota = "";
+    if(a === "todas"){
+      cant = parseInt($("fCuota").value, 10) || 1;
+      if(cant > 48){ el.hidden = false; el.innerHTML = "Máximo 48 cuotas."; btn.textContent = "Guardar"; return; }
+      var f = $("fFecha").value ? $("fFecha").value.split("-") : null;
+      desde = f ? Number(f[0]) * 12 + Number(f[1]) - 1 : pk.primerMes;
+      var c = Math.floor(v / cant);
+      txt = cant === 1 ? "<b>Queda como un solo gasto de " + money.format(v) + "</b>"
+        : "<b>" + (cant === pk.n ? "Se actualizan las " + cant + " cuotas" : "La compra queda en " + cant + " cuotas") + "</b> de " + money.format(c) + " cada mes";
+      if(pk.compartido && v > 0) txt += " · tu mitad " + money.format(Math.floor(c / 2)) + (cant > 1 ? " c/u" : "");
+      btn.textContent = cant === 1 ? "Guardar como un solo gasto" : "Guardar en las " + cant + " cuotas";
+    } else {
+      desde = pk.mesAbs; cant = pk.n - pk.k + 1;
+      txt = cant === 1 ? "<b>Se actualiza solo la última cuota</b> a " + money.format(v)
+        : "<b>Se actualizan las cuotas " + pk.k + " a " + pk.n + "</b> a " + money.format(v) + " cada una";
+      if(pk.compartido && v > 0) txt += " · tu mitad " + money.format(Math.floor(v / 2));
+      if(pk.k > 1) nota = "<span>Las cuotas anteriores no cambian.</span>";
+      btn.textContent = "Guardar en " + cant + (cant === 1 ? " cuota" : " cuotas");
+    }
+    var chips = "";
+    if(cant > 1 && cant <= 12){
+      chips = '<div class="pack-meses">';
+      for(var k = 0; k < cant; k++) chips += "<i>" + mesCortoAbs(desde + k) + "</i>";
+      chips += "</div>";
+    } else if(cant > 12){
+      chips = "<span>" + mesCortoAbs(desde, true) + " a " + mesCortoAbs(desde + cant - 1, true) + "</span>";
+    }
+    el.innerHTML = txt + chips + nota;
+    el.hidden = false;
+  }
+  $("deletePackBtn").onclick = function(){
+    if(!editingFila || !packEdit) return;
+    var pk = packEdit;
+    var nombre = (pk.base || pk.mov.categoria) + " · " + pk.n + " cuotas · total " + money.format(pk.total);
+    if(!confirm('¿Eliminar la compra completa "' + nombre + '"?' + (pk.compartido ? " También se borra la mitad de Daniela en Deudas." : "") + " No se puede deshacer.")) return;
+    var btn = $("deletePackBtn");
+    btn.disabled = true;
+    btn.textContent = "Eliminando...";
+    apiPost({ accion: "eliminarCompraCuotas", fila: editingFila })
+      .then(function(json){
+        if(!json.ok) throw new Error(json.error || "Error desconocido");
+        showToast("Compra eliminada ✓ · " + json.borradas + (json.borradas === 1 ? " cuota" : " cuotas"), "ok");
+        closeSheet();
+        loadData(true);
+        if(currentView === "viewHistorial") loadMovimientos();
+      })
+      .catch(function(err){
+        showToast("Error: " + err.message, "err");
+      })
+      .finally(function(){
+        btn.disabled = false;
+        btn.textContent = "Eliminar la compra completa (" + pk.n + " cuotas)";
+      });
+  };
 
   $("deleteBtn").onclick = function(){
     if(!editingFila) return;
@@ -3813,7 +3998,7 @@
       })
       .finally(function(){
         btn.disabled = false;
-        btn.textContent = "Eliminar este gasto";
+        btn.textContent = packEdit ? "Eliminar solo esta cuota" : "Eliminar este gasto";
       });
   };
 
@@ -3875,7 +4060,15 @@
     btn.disabled = true;
 
     var promesa;
-    if(editingFila){
+    if(editingFila && packEdit && packEdit.alcance !== "esta"){
+      var nPack = parseInt($("fCuota").value, 10) || 1;
+      if(packEdit.alcance === "todas" && (nPack < 1 || nPack > 48)){ btn.disabled = false; showToast("Las cuotas deben ser entre 1 y 48", "err"); return; }
+      btn.textContent = "Guardando...";
+      var bodyPack = { accion: "editarCompraCuotas", fila: editingFila, alcance: packEdit.alcance, valor: valor,
+        categoria: $("fCategoria").value, persona: $("fPersona").value, banco: getBancoValue(), detalle: $("fDetalle").value || "" };
+      if(packEdit.alcance === "todas"){ bodyPack.cuotas = nPack; bodyPack.fecha = $("fFecha").value; }
+      promesa = apiPost(bodyPack);
+    } else if(editingFila){
       btn.textContent = "Guardando...";
       promesa = apiPost({
         accion: "editarMovimiento",
@@ -3912,6 +4105,16 @@
 
     promesa.then(function(json){
       if(!json.ok) throw new Error(json.error || "Error desconocido");
+      if(json.compraCuotas){
+        var cc = json.compraCuotas;
+        if(json.aviso) showToast("Guardado. " + json.aviso, "", 6000);
+        else if(cc.alcance === "todas") showToast(cc.cuotas > 1 ? "Compra actualizada ✓ · " + cc.cuotas + " cuotas de " + money.format(json.valor) + (json.compartidoDaniela ? " (tu mitad)" : "") : "Compra actualizada ✓ · quedó como un solo gasto", "ok");
+        else showToast("Listo ✓ · " + cc.cuotas + (cc.cuotas === 1 ? " cuota actualizada" : " cuotas actualizadas"), "ok");
+        closeSheet();
+        loadData(true);
+        if(currentView === "viewHistorial") loadMovimientos();
+        return;
+      }
       if(json.aviso) showToast("Guardado. " + json.aviso, "", 6000);
       else if(json.cuotas > 1) showToast("Guardado ✓ · " + json.cuotas + " cuotas de " + money.format(json.valor) + (json.meses ? " (" + json.meses[0].mes.slice(0,3).toLowerCase() + " a " + json.meses[json.meses.length-1].mes.slice(0,3).toLowerCase() + ")" : ""), "ok");
       else showToast("Guardado correctamente ✓", "ok");
